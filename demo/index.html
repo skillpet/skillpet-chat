@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@skillpet/chat · Mock Demo</title>
+    <!-- 与 test/App.tsx 中 STORAGE_* 键名保持一致，避免首屏主题/语言闪烁 -->
+    <script>
+      (function () {
+        try {
+          if (localStorage.getItem("skillpet-chat-test-theme") === "dark") {
+            document.documentElement.classList.add("dark");
+          }
+          var lang = localStorage.getItem("skillpet-chat-test-lang");
+          if (lang) document.documentElement.lang = lang;
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="./main.tsx"></script>
+  </body>
+</html>

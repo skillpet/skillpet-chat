@@ -1,0 +1,37 @@
+@import "tailwindcss";
+@import "@skillpet/chat-core/styles.css";
+@plugin "@tailwindcss/typography";
+
+@variant dark (&:is(.dark, .dark *));
+
+@theme inline {
+  --color-background: var(--skillpet-chat-background);
+  --color-foreground: var(--skillpet-chat-foreground);
+  --color-card: var(--skillpet-chat-card);
+  --color-card-foreground: var(--skillpet-chat-card-foreground);
+  --color-popover: var(--skillpet-chat-popover);
+  --color-popover-foreground: var(--skillpet-chat-popover-foreground);
+  --color-primary: var(--skillpet-chat-primary);
+  --color-primary-foreground: var(--skillpet-chat-primary-foreground);
+  --color-secondary: var(--skillpet-chat-secondary);
+  --color-secondary-foreground: var(--skillpet-chat-secondary-foreground);
+  --color-muted: var(--skillpet-chat-muted);
+  --color-muted-foreground: var(--skillpet-chat-muted-foreground);
+  --color-accent: var(--skillpet-chat-accent);
+  --color-accent-foreground: var(--skillpet-chat-accent-foreground);
+  --color-destructive: var(--skillpet-chat-destructive);
+  --color-destructive-foreground: var(--skillpet-chat-destructive-foreground);
+  --color-border: var(--skillpet-chat-border);
+  --color-input: var(--skillpet-chat-input);
+  --color-ring: var(--skillpet-chat-ring);
+  --radius-sm: calc(var(--skillpet-chat-radius) - 4px);
+  --radius-md: calc(var(--skillpet-chat-radius) - 2px);
+  --radius-lg: var(--skillpet-chat-radius);
+  --radius-xl: calc(var(--skillpet-chat-radius) + 4px);
+}
+
+@layer base {
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+}
