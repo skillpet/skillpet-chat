@@ -34,9 +34,11 @@ npm install @skillpet/chat-core
 本仓库 `demo/` 目录包含完整的 React 示例应用：
 
 ```bash
-cd demo
+git clone https://github.com/skillpet/skillpet-chat.git
+cd skillpet-chat/demo
 npm install
 npm run dev
+# 打开 http://localhost:5400
 ```
 
 ### 最简用法

@@ -7,14 +7,13 @@ dist/
 # npm 包源码不开源
 packages/
 demo-vue/
-docs/OPTIMIZATION.md
-docs/UPGRADE-ANALYSIS.md
-tsconfig.json
-pnpm-workspace.yaml
-.pnpm-approve-builds.json
+docs/
 .vscode/
 .github/
-docs/
+.pnpm-approve-builds.json
 pnpm-lock.yaml
 pnpm-workspace.yaml
-package.json
+
+# 根目录 monorepo 配置（不公开）
+/package.json
+/tsconfig.json
