@@ -27,6 +27,8 @@ const MIME = {
   ".woff2": "font/woff2",
   ".ttf": "font/ttf",
   ".webp": "image/webp",
+  ".md": "text/markdown; charset=utf-8",
+  ".txt": "text/plain; charset=utf-8",
 };
 
 // ─── Mock SSE helpers ─────────────────────────────────────────────────────────
