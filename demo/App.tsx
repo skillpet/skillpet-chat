@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { Outlet, NavLink, Link } from "react-router-dom";
-import { Moon, Sun } from "lucide-react";
+import { Moon, Sun, Github, ExternalLink } from "lucide-react";
 import { setChatLanguage } from "@skillpet/chat-react";
 
 const STORAGE_LANG = "skillpet-chat-test-lang";
@@ -104,6 +104,32 @@ export default function App() {
           </nav>
 
           <div className="flex flex-1 flex-wrap items-center justify-end gap-2 sm:gap-3">
+            <a
+              href="https://github.com/skillpet/skillpet-chat"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="GitHub"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <Github className="h-4 w-4" />
+              <span className="sr-only">GitHub</span>
+            </a>
+            <a
+              href="https://www.npmjs.com/package/@skillpet/chat-react"
+              target="_blank"
+              rel="noopener noreferrer"
+              title="npm"
+              className="inline-flex h-9 items-center gap-1 rounded-md px-2 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <svg viewBox="0 0 780 250" className="h-3.5 w-auto" fill="currentColor" aria-hidden>
+                <path d="M240 250h100V50h100v200h340V0H0v250h240" />
+              </svg>
+              <ExternalLink className="h-3 w-3" />
+              <span className="sr-only">npm</span>
+            </a>
+
+            <div className="hidden sm:block h-5 w-px bg-border" />
+
             <label className="flex items-center gap-2 text-sm text-muted-foreground">
               <span className="whitespace-nowrap">{t.langLabel}</span>
               <select

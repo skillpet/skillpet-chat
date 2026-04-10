@@ -7,6 +7,9 @@ import {
   Layers,
   ArrowRight,
   Sparkles,
+  Github,
+  ExternalLink,
+  FileText,
 } from "lucide-react";
 import { useLang } from "../App";
 
@@ -225,6 +228,44 @@ export default function WelcomePage() {
         {getTip(t.tipForm[1], t.tipForm[0])}
         <span>·</span>
         {getTip(t.tipPlan[1], t.tipPlan[0])}
+      </div>
+
+      <div className="flex flex-wrap items-center justify-center gap-3 text-xs text-muted-foreground">
+        <a
+          href="https://github.com/skillpet/skillpet-chat"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <Github className="h-3.5 w-3.5" />
+          GitHub
+        </a>
+        <a
+          href="https://www.npmjs.com/package/@skillpet/chat-react"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <ExternalLink className="h-3.5 w-3.5" />
+          npm (React)
+        </a>
+        <a
+          href="https://www.npmjs.com/package/@skillpet/chat-vue"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <ExternalLink className="h-3.5 w-3.5" />
+          npm (Vue)
+        </a>
+        <a
+          href="/api.md"
+          target="_blank"
+          className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <FileText className="h-3.5 w-3.5" />
+          API (Markdown)
+        </a>
       </div>
     </div>
   );

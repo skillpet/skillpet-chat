@@ -144,6 +144,12 @@ export default function ApiDocPage() {
           <p className="mt-2 text-sm text-muted-foreground">
             <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-foreground/80">@skillpet/chat-react</code> — React 入口完整参考，Vue 与 Core 入口简要索引。
           </p>
+          <p className="mt-2 inline-flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+            <span>AI / 机器可读版本：</span>
+            <a href="/api.md" target="_blank" className="font-mono text-primary hover:underline">/api.md</a>
+            <span className="text-border">|</span>
+            <a href="/llms.txt" target="_blank" className="font-mono text-primary hover:underline">/llms.txt</a>
+          </p>
         </div>
 
         {/* ── 安装 ── */}
