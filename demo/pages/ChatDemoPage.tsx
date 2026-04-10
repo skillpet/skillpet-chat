@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { BotMessageSquare } from "lucide-react";
 import {
   ChatPanel,
@@ -52,15 +52,27 @@ const QUICK_STARTERS_BY_LANG: Record<string, string[]> = {
   ],
 };
 
+const ALL_CAPS = ["thinking", "search", "attachment", "reset"] as const;
+
+const CAP_LABELS: Record<string, Record<string, string>> = {
+  thinking: { "zh-CN": "深度思考", en: "Thinking" },
+  search: { "zh-CN": "联网搜索", en: "Search" },
+  attachment: { "zh-CN": "附件", en: "Attachment" },
+  reset: { "zh-CN": "重置", en: "Reset" },
+};
+
 export default function ChatDemoPage() {
   const lang = useLang();
+  const [capOverride, setCapOverride] = useState<string[]>([...ALL_CAPS]);
+
+  const toggleCap = (cap: string) =>
+    setCapOverride((prev) =>
+      prev.includes(cap) ? prev.filter((c) => c !== cap) : [...prev, cap]
+    );
 
   const chatConfig: ChatPanelConfig = useMemo(
     () => ({
-      api: {
-        baseUrl: "/api/mock-chat",
-        deleteConversationUrl: "/api/mock-chat/conversation/demo",
-      },
+      api: { baseUrl: "/api/mock-chat" },
       getAccessToken: () => "mock-token",
       accessToken: "mock-token",
       lang,
@@ -73,29 +85,55 @@ export default function ChatDemoPage() {
     [lang]
   );
 
+  const EMPTY_STATE_I18N: Record<string, { title: string; subtitle: string }> = {
+    "zh-CN": { title: "有什么我可以帮你的？", subtitle: "描述你的需求，AI 将协助你完成" },
+    "zh-TW": { title: "有什麼我可以幫你的？", subtitle: "描述你的需求，AI 將協助你完成" },
+    en: { title: "What can I help you with?", subtitle: "Describe your needs and AI will assist you" },
+    ja: { title: "何かお手伝いできますか？", subtitle: "ご要望を入力してください。AIがサポートします" },
+    ko: { title: "무엇을 도와드릴까요?", subtitle: "필요한 것을 설명해 주세요. AI가 도와드립니다" },
+    es: { title: "¿En qué puedo ayudarte?", subtitle: "Describe lo que necesitas y la IA te asistirá" },
+    fr: { title: "Comment puis-je vous aider ?", subtitle: "Décrivez vos besoins, l'IA vous assistera" },
+  };
+
   const emptyState: ChatPanelEmptyState = useMemo(() => {
-    const isEn = lang === "en";
+    const i = EMPTY_STATE_I18N[lang] ?? EMPTY_STATE_I18N.en;
     return {
       icon: (
         <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
           <BotMessageSquare className="h-8 w-8" />
         </div>
       ),
-      title: isEn ? "What can I help you with?" : "有什么我可以帮你的？",
-      subtitle: isEn
-        ? "Describe your needs and AI will assist you"
-        : "描述你的需求，AI 将协助你完成",
+      title: i.title,
+      subtitle: i.subtitle,
     };
   }, [lang]);
 
   return (
     <main className="flex min-h-0 flex-1 flex-col p-4">
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
+        <span className="text-xs text-muted-foreground mr-1">{lang.startsWith("zh") ? "功能开关：" : "Capabilities:"}</span>
+        {ALL_CAPS.map((cap) => (
+          <button
+            key={cap}
+            type="button"
+            onClick={() => toggleCap(cap)}
+            className={`rounded-full border px-2.5 py-0.5 text-xs font-medium transition-all ${
+              capOverride.includes(cap)
+                ? "border-primary/40 bg-primary/10 text-primary"
+                : "border-border bg-transparent text-muted-foreground line-through opacity-60"
+            }`}
+          >
+            {CAP_LABELS[cap]?.[lang.startsWith("zh") ? "zh-CN" : "en"] ?? cap}
+          </button>
+        ))}
+      </div>
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm">
         <ChatPanel
           projectId="demo"
           config={chatConfig}
           quickStarters={quickStarters}
           emptyState={emptyState}
+          capVisibleOverride={capOverride}
           className="min-h-0 flex-1"
         />
       </div>

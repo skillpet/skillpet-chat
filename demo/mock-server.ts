@@ -359,12 +359,35 @@ function mockChatMiddleware(): Connect.NextHandleFunction {
       const pathname = parsePath(req.url);
       const method = (req.method ?? "GET").toUpperCase();
 
-      if (method === "GET" && pathname === "/api/mock-chat/history/demo") {
+      if (method === "GET" && pathname === "/api/mock-chat/init/demo") {
         sendJson(res, 200, {
-          capabilities: {
-            frontendVisible: ["thinking", "search"],
-            frontendDefaults: ["thinking"],
+          agent: {
+            id: "main-bot",
+            name: "SkillPet Demo",
+            avatarUrl: "https://api.dicebear.com/9.x/bottts/svg?seed=skillpet",
+            description: "演示用主智能体",
           },
+          capabilities: {
+            thinking: { enabled: true, defaultOn: true },
+            search: { enabled: true, defaultOn: false },
+            attachment: {
+              enabled: true,
+              accept: "image/*,.pdf,.doc,.docx,.txt",
+              maxFileSize: 10485760,
+              maxCount: 5,
+              uploadUrl: "/api/mock-chat/upload",
+              deleteUrl: "/api/mock-chat/attachment/{attachmentId}",
+            },
+            reset: {
+              enabled: true,
+              clearUrl: "/api/mock-chat/conversation/{projectId}",
+            },
+          },
+          subAgents: [
+            { id: "sub-research", name: "Research Agent", avatarUrl: "https://api.dicebear.com/9.x/bottts/svg?seed=research" },
+            { id: "sub-code", name: "Code Agent", avatarUrl: "https://api.dicebear.com/9.x/bottts/svg?seed=code" },
+          ],
+          userAvatarUrl: "https://api.dicebear.com/9.x/thumbs/svg?seed=user",
           messages: [],
         });
         return;
@@ -380,7 +403,29 @@ function mockChatMiddleware(): Connect.NextHandleFunction {
         return;
       }
 
+      if (method === "POST" && pathname === "/api/mock-chat/upload") {
+        const chunks: Buffer[] = [];
+        req.on("data", (c: Buffer) => chunks.push(c));
+        req.on("end", () => {
+          const id = `att-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+          sendJson(res, 200, {
+            id,
+            name: "uploaded-file",
+            size: Buffer.concat(chunks).length,
+            type: "application/octet-stream",
+            url: `https://mock.example.com/files/${id}`,
+            processedData: { description: "Mock processed result: file content analyzed." },
+          });
+        });
+        return;
+      }
+
       if (method === "DELETE" && pathname === "/api/mock-chat/conversation/demo") {
+        sendJson(res, 200, { success: true });
+        return;
+      }
+
+      if (method === "DELETE" && pathname.startsWith("/api/mock-chat/attachment/")) {
         sendJson(res, 200, { success: true });
         return;
       }

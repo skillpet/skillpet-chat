@@ -35,16 +35,15 @@ function App() {
     <ChatPanel
       projectId="my-project"
       config={{
-        api: {
-          baseUrl: '/api/chat',
-          deleteConversationUrl: '/api/chat/conversation/{projectId}',
-        },
+        api: { baseUrl: '/api/chat' },
         getAccessToken: () => localStorage.getItem('token'),
       }}
     />
   );
 }
 ```
+
+> **v0.5**: `deleteConversationUrl` and `uploadUrl` are now returned by the server via `GET /init/{projectId}`. You only need `baseUrl`.
 
 ### Vue
 
@@ -54,10 +53,7 @@ import { ChatPanel } from '@skillpet/chat-vue';
 import '@skillpet/chat-core/styles.css';
 
 const config = {
-  api: {
-    baseUrl: '/api/chat',
-    deleteConversationUrl: '/api/chat/conversation/{projectId}',
-  },
+  api: { baseUrl: '/api/chat' },
   getAccessToken: () => localStorage.getItem('token'),
 };
 </script>
@@ -95,6 +91,10 @@ Main component with full chat UI, input box, message list, and tool interaction.
 | `extraSlashCommands` | `SlashCommand[]` | No | Additional slash commands |
 | `quickStarters` | `string[]` | No | Quick starter prompts for empty state |
 | `emptyState` | `ChatPanelEmptyState` | No | Custom empty state icon, title, subtitle |
+| `onUploadAttachment` | `(file: File) => Promise<ChatAttachment>` | No | Custom upload callback (takes priority over init uploadUrl) |
+| `onDeleteAttachment` | `(attachmentId: string) => Promise<void>` | No | Custom delete callback (paired with `onUploadAttachment`) |
+| `capVisibleOverride` | `string[]` | No | Override init capabilities visibility (replaces entirely when set) |
+| `avatars` | `AvatarConfig` | No | Avatar overrides (takes priority over init-returned avatars) |
 | `className` | `string` | No | CSS class for root element |
 
 ### ChatProvider (React) / provideChatConfig (Vue)
@@ -177,6 +177,13 @@ Headless hook that returns all chat panel state and actions for fully custom UI.
 | `containerRef` | `RefObject<HTMLDivElement>` | Scroll container ref |
 | `showScrollButton` | `boolean` | Whether to show scroll-to-bottom |
 | `scrollToBottom` | `(force?: boolean) => void` | Scroll to bottom |
+| `subAgentMap` | `Record<string, AgentInfo>` | Sub-agent metadata map (from init) |
+| `attachmentCap` | `AttachmentCap \| null` | Attachment capability config (from init) |
+| `agentInfo` | `AgentInfo \| null` | Main agent info (from init) |
+| `userAvatarUrl` | `string \| undefined` | User avatar URL (from init) |
+| `resetClearUrl` | `string \| undefined` | Reset conversation URL (from init) |
+| `initError` | `string \| null` | Initialization error message |
+| `retryInit` | `() => void` | Retry init request |
 
 ### MessageBubble
 
@@ -250,12 +257,15 @@ Converts backend history API raw messages into `ChatMessage[]`, handling ask_use
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `api.baseUrl` | `string` | Yes | SSE / history API base URL |
-| `api.deleteConversationUrl` | `string` | Yes | Delete conversation URL (supports `{projectId}` placeholder) |
+| `api.baseUrl` | `string` | Yes | API base URL (used for `init`, `stream`, `tool-response`) |
+| `api.deleteConversationUrl` | `string` | No | **@deprecated v0.5** — now returned by init `capabilities.reset.clearUrl`; kept as fallback |
+| `api.uploadUrl` | `string` | No | **@deprecated v0.5** — now returned by init `capabilities.attachment.uploadUrl`; kept as fallback |
 | `getAccessToken` | `() => string \| null \| Promise<string \| null>` | Yes | Get Bearer token |
-| `accessToken` | `string \| null` | No | Token identifier (history reloads when changed) |
+| `accessToken` | `string \| null` | No | Token identifier |
 | `lang` | `string` | No | Language code (zh-CN / en / ja / ...) |
 | `components` | `ChatPanelComponents` | No | UI component toggles |
+| `attachmentConfig` | `AttachmentConfig` | No | **@deprecated v0.5** — now returned by init `capabilities.attachment`; kept as fallback |
+| `theme` | `ChatTheme` | No | Custom theme color overrides |
 
 ### ChatPanelComponents
 
@@ -270,6 +280,43 @@ Converts backend history API raw messages into `ChatMessage[]`, handling ask_use
 | `icon` | `ReactNode` | Top icon |
 | `title` | `string` | Title text |
 | `subtitle` | `string` | Subtitle text |
+
+### ChatAttachment
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `id` | `string` | Yes | Unique attachment identifier |
+| `name` | `string` | Yes | Display file name |
+| `size` | `number` | Yes | File size in bytes |
+| `type` | `string` | Yes | MIME type |
+| `url` | `string` | Yes | Upload URL (sent to backend) |
+| `processedData` | `unknown` | No | Extra data returned by backend (e.g. OCR result) |
+| `previewUrl` | `string` | No | Local preview URL (frontend-only, not sent to backend) |
+
+### AttachmentConfig
+
+> **@deprecated v0.5** — replaced by `AttachmentCap` (returned by init API). Kept as fallback during v0.5 transition.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `maxFileSize` | `number` | Max file size in bytes (default: 10MB) |
+| `maxCount` | `number` | Max number of simultaneous attachments (default: 5) |
+| `accept` | `string` | MIME filter, e.g. `"image/*"` |
+
+### ChatTheme
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `primaryColor` | `string` | Brand color (buttons, highlights), e.g. `"#7c3aed"` |
+| `primaryForeground` | `string` | Text color on primary elements (default: white) |
+
+### AvatarConfig
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `botAvatarUrl` | `string` | Main assistant bot avatar image URL |
+| `userAvatarUrl` | `string` | User avatar image URL |
+| `agentAvatarMap` | `Record<string, string>` | Sub-agent name → avatar image URL mapping |
 
 ### SlashCommand
 
@@ -345,6 +392,8 @@ Converts backend history API raw messages into `ChatMessage[]`, handling ask_use
 | `isAgentStreaming` | `boolean` | No | Whether sub-agent is streaming |
 | `agentToolSteps` | `AgentToolStep[]` | No | Sub-agent tool steps |
 | `preview` | `string` | No | Tool arguments preview |
+| `agentId` | `string` | No | **v0.5** Sub-agent ID (use with `subAgentMap` for metadata lookup) |
+| `agentAvatarUrl` | `string` | No | **@deprecated v0.5** — use `agentId` + `subAgentMap` instead |
 
 ### AgentToolStep
 
@@ -364,6 +413,94 @@ Converts backend history API raw messages into `ChatMessage[]`, handling ask_use
 | `status` | `string` | Yes | Execution status |
 | `message` | `string` | Yes | Result message |
 | `id` | `string` | No | Tool call ID |
+
+### AgentInfo (v0.5)
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `id` | `string` | Yes | Agent unique ID |
+| `name` | `string` | Yes | Display name |
+| `avatarUrl` | `string` | No | Avatar image URL |
+| `description` | `string` | No | Description |
+
+### CapToggle (v0.5)
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `enabled` | `boolean` | Yes | Whether this capability is enabled |
+| `defaultOn` | `boolean` | Yes | Whether it defaults to on |
+
+### AttachmentCap (v0.5)
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `enabled` | `boolean` | Yes | Whether attachment is enabled |
+| `accept` | `string` | No | Allowed MIME types |
+| `maxFileSize` | `number` | No | Max file size in bytes (default 10MB) |
+| `maxCount` | `number` | No | Max simultaneous attachments (default 5) |
+| `uploadUrl` | `string` | Yes | Upload endpoint (POST multipart/form-data) |
+| `deleteUrl` | `string` | No | Delete URL template with `{attachmentId}` placeholder |
+
+### ResetCap (v0.5)
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `enabled` | `boolean` | Yes | Whether reset is enabled |
+| `clearUrl` | `string` | Yes | DELETE URL template with `{projectId}` placeholder |
+
+### InitCapabilities (v0.5)
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `thinking` | `CapToggle` | Yes | Deep thinking capability |
+| `search` | `CapToggle` | Yes | Web search capability |
+| `attachment` | `AttachmentCap` | No | Attachment capability |
+| `reset` | `ResetCap` | No | Reset conversation capability |
+
+### ChatInitData (v0.5)
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `agent` | `AgentInfo` | Yes | Main agent info |
+| `capabilities` | `InitCapabilities` | Yes | All capabilities |
+| `subAgents` | `AgentInfo[]` | No | Sub-agent list for metadata pre-loading |
+| `userAvatarUrl` | `string` | No | Current user avatar URL |
+| `messages` | `Array<{id, role, content}>` | No | Conversation history |
+
+---
+
+## Server API Endpoints (v0.5)
+
+### GET `{baseUrl}/init/{projectId}`
+
+Unified initialization endpoint. Returns agent metadata, capabilities, sub-agents, and conversation history in a single request.
+
+**Request:**
+```
+GET {baseUrl}/init/{projectId}
+Authorization: Bearer <token>
+```
+
+**Response 200:** `ChatInitData` (see type definition above)
+
+**Fallback:** If the server returns 404, the client automatically falls back to `GET {baseUrl}/history/{projectId}` (legacy format) and converts the response.
+
+### DELETE `{deleteUrl}`
+
+Attachment deletion endpoint (fire-and-forget). Called when users manually remove an unsent attachment.
+
+**URL:** Resolved from `ChatInitData.capabilities.attachment.deleteUrl` by replacing `{attachmentId}` placeholder.
+
+**Response 200:**
+```json
+{ "success": true }
+```
+
+### DELETE `{clearUrl}`
+
+Reset conversation endpoint. Called when users confirm conversation reset.
+
+**URL:** Resolved from `ChatInitData.capabilities.reset.clearUrl` by replacing `{projectId}` placeholder.
 
 ---
 
@@ -401,12 +538,13 @@ import '@skillpet/chat-core/styles.css';
 | `setChatLanguage` | Function | Switch i18n language |
 | `chatI18n` | Object | i18next instance for advanced use |
 | `cn` | Function | Tailwind class merge utility (clsx + tailwind-merge) |
+| `resolveUrlTemplate` | Function | URL template resolver with placeholder replacement (v0.5) |
 | `SSE_STREAM_UI_DEFAULT_ZH` | Constant | Default Chinese UI strings for SSE |
 | `SSE_STREAM_UI_DEFAULT_EN` | Constant | Default English UI strings for SSE |
 | `PARSE_HISTORY_UI_DEFAULT_ZH` | Constant | Default Chinese UI strings for history parsing |
 | `PARSE_HISTORY_UI_DEFAULT_EN` | Constant | Default English UI strings for history parsing |
 | `styles.css` | CSS | Built-in brand theme + Tailwind component styles |
-| All type definitions | Type | ChatMessage, ChatPanelConfig, SSECallbacks, etc. |
+| All type definitions | Type | ChatMessage, ChatPanelConfig, SSECallbacks, AgentInfo, ChatInitData, etc. |
 
 ---
 
