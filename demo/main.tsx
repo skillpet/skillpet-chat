@@ -8,6 +8,7 @@ import App from "./App";
 const WelcomePage = lazy(() => import("./pages/WelcomePage"));
 const ChatDemoPage = lazy(() => import("./pages/ChatDemoPage"));
 const ApiDocPage = lazy(() => import("./pages/ApiDocPage"));
+const BackendGuidePage = lazy(() => import("./pages/BackendGuidePage"));
 
 try {
   const savedLang = localStorage.getItem("skillpet-chat-test-lang");
@@ -25,6 +26,7 @@ createRoot(document.getElementById("root")!).render(
             <Route index element={<WelcomePage />} />
             <Route path="demo" element={<ChatDemoPage />} />
             <Route path="api" element={<ApiDocPage />} />
+            <Route path="backend" element={<BackendGuidePage />} />
           </Route>
         </Routes>
       </Suspense>

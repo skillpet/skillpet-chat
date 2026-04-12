@@ -66,8 +66,9 @@ function App() {
 ### 示例包含
 
 - **欢迎页** — 产品介绍、多语言切换
-- **对话演示** — Mock SSE 流式对话（支持工具调用、表单交互、方案选择）
-- **API 文档** — 完整接口参考
+- **对话演示** — Mock SSE 流式对话（支持工具调用、表单交互、方案选择、排队发送）
+- **API 文档** — 前端组件完整接口参考
+- **后端对接指南** — HTTP 接口、SSE 协议、消息存储格式、Express 模板
 
 ## 功能特性
 
@@ -75,6 +76,9 @@ function App() {
 - React & Vue 3 双框架完全对等
 - 子智能体（consult agent）多轮对话与工具步骤展示
 - 结构化提问（ask_user）表单交互
+- **流式排队发送** — AI 回复中可继续输入，消息自动排队按序发送（v0.6）
+- **队列管理** — 编辑、删除、拖拽排序排队中的消息（v0.6）
+- **附件增强** — 拖放文件上传、粘贴图片上传、图片缩略图预览（v0.6）
 - 斜杠指令面板
 - 内置 7 种语言（zh-CN、zh-TW、en、ja、ko、es、fr）
 - 蓝色品牌色默认主题，支持深色/浅色模式
@@ -89,6 +93,12 @@ function App() {
 <script src="https://unpkg.com/@skillpet/chat-react/dist/index.umd.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/@skillpet/chat-core/dist/skillpet-chat.css" />
 ```
+
+## 文档
+
+- [在线 API 文档](https://chat.skill.pet/api) — 前端组件完整接口参考
+- [后端对接开发手册](https://chat.skill.pet/backend) — HTTP 接口规范、SSE 事件协议、消息存储格式、System Prompt 最佳实践
+- [AI 可读版本](https://chat.skill.pet/backend-guide.md) — Markdown 原文，可直接提供给 AI 编码助手
 
 ## 相关链接
 

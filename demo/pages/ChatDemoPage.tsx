@@ -52,13 +52,14 @@ const QUICK_STARTERS_BY_LANG: Record<string, string[]> = {
   ],
 };
 
-const ALL_CAPS = ["thinking", "search", "attachment", "reset"] as const;
+const ALL_CAPS = ["thinking", "search", "attachment", "reset", "queuedSend"] as const;
 
 const CAP_LABELS: Record<string, Record<string, string>> = {
   thinking: { "zh-CN": "深度思考", en: "Thinking" },
   search: { "zh-CN": "联网搜索", en: "Search" },
   attachment: { "zh-CN": "附件", en: "Attachment" },
   reset: { "zh-CN": "重置", en: "Reset" },
+  queuedSend: { "zh-CN": "排队发送", en: "Queued Send" },
 };
 
 export default function ChatDemoPage() {

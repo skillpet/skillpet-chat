@@ -382,6 +382,7 @@ function mockChatMiddleware(): Connect.NextHandleFunction {
               enabled: true,
               clearUrl: "/api/mock-chat/conversation/{projectId}",
             },
+            queuedSend: { enabled: true, maxQueueSize: 5 },
           },
           subAgents: [
             { id: "sub-research", name: "Research Agent", avatarUrl: "https://api.dicebear.com/9.x/bottts/svg?seed=research" },
@@ -407,12 +408,18 @@ function mockChatMiddleware(): Connect.NextHandleFunction {
         const chunks: Buffer[] = [];
         req.on("data", (c: Buffer) => chunks.push(c));
         req.on("end", () => {
+          const body = Buffer.concat(chunks);
+          const header = body.subarray(0, Math.min(body.length, 1024)).toString("binary");
+          const nameMatch = header.match(/filename="([^"]+)"/);
+          const ctMatch = header.match(/Content-Type:\s*(\S+)/i);
+          const fileName = nameMatch ? nameMatch[1] : "uploaded-file";
+          const mimeType = ctMatch ? ctMatch[1].replace(/[\r\n]+$/, "") : "application/octet-stream";
           const id = `att-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
           sendJson(res, 200, {
             id,
-            name: "uploaded-file",
-            size: Buffer.concat(chunks).length,
-            type: "application/octet-stream",
+            name: fileName,
+            size: body.length,
+            type: mimeType,
             url: `https://mock.example.com/files/${id}`,
             processedData: { description: "Mock processed result: file content analyzed." },
           });

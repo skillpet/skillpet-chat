@@ -164,7 +164,7 @@ Headless hook that returns all chat panel state and actions for fully custom UI.
 | `isLoadingHistory` | `boolean` | Whether loading history |
 | `showSlashCommands` | `boolean` | Whether showing slash panel |
 | `slashCommands` | `SlashCommand[]` | Merged slash command list |
-| `handleSend` | `(msg?: string) => Promise<void>` | Send message |
+| `handleSend` | `(messageOverride?: string, attachments?: ChatAttachment[]) => Promise<void>` | Send message (optional attachments) |
 | `handleSlashCommand` | `(cmd: SlashCommand) => void` | Execute slash command |
 | `handleOptionClick` | `(callId: string, name: string, optId: string) => Promise<void>` | Tool option click |
 | `handleResetConversation` | `() => Promise<void>` | Reset conversation |
@@ -184,6 +184,14 @@ Headless hook that returns all chat panel state and actions for fully custom UI.
 | `resetClearUrl` | `string \| undefined` | Reset conversation URL (from init) |
 | `initError` | `string \| null` | Initialization error message |
 | `retryInit` | `() => void` | Retry init request |
+| `queuedSendEnabled` | `boolean` | 排队发送是否启用 |
+| `maxQueueSize` | `number` | 队列最大消息数 |
+| `messageQueue` | `QueuedMessage[]` | 当前排队中的消息列表 |
+| `enqueueMessage` | `(content: string, attachments?: ChatAttachment[]) => boolean` | 将消息加入队列，返回是否成功 |
+| `removeQueuedMessage` | `(id: string) => void` | 移除指定排队消息（同时清理附件） |
+| `popQueuedMessage` | `(id: string) => QueuedMessage \| null` | 从队列中取出消息（不清理附件，用于编辑回填） |
+| `reorderQueue` | `(fromIndex: number, toIndex: number) => void` | 拖拽排序：将队列中 fromIndex 位置的消息移到 toIndex |
+| `clearQueue` | `() => void` | 清空队列 |
 
 ### MessageBubble
 
@@ -448,6 +456,26 @@ Converts backend history API raw messages into `ChatMessage[]`, handling ask_use
 | `enabled` | `boolean` | Yes | Whether reset is enabled |
 | `clearUrl` | `string` | Yes | DELETE URL template with `{projectId}` placeholder |
 
+### QueuedSendCap (v0.6)
+
+排队发送配置（由 init 接口返回）。
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `enabled` | `boolean` | Yes | 是否启用排队发送 |
+| `maxQueueSize` | `number` | Yes | 队列最大消息数（建议 1~10） |
+
+### QueuedMessage (v0.6)
+
+队列中的待发送消息（客户端状态，不传给服务端）。
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | `string` | 唯一标识（用于删除和 UI key） |
+| `content` | `string` | 消息文本内容 |
+| `attachments` | `ChatAttachment[]` | 已上传的附件列表 |
+| `createdAt` | `number` | 入队时间戳（ms） |
+
 ### InitCapabilities (v0.5)
 
 | Field | Type | Required | Description |
@@ -456,6 +484,7 @@ Converts backend history API raw messages into `ChatMessage[]`, handling ask_use
 | `search` | `CapToggle` | Yes | Web search capability |
 | `attachment` | `AttachmentCap` | No | Attachment capability |
 | `reset` | `ResetCap` | No | Reset conversation capability |
+| `queuedSend` | `QueuedSendCap` | No | 排队发送配置；未提供或 `enabled: false` 时禁用排队 |
 
 ### ChatInitData (v0.5)
 
@@ -484,6 +513,36 @@ Authorization: Bearer <token>
 **Response 200:** `ChatInitData` (see type definition above)
 
 **Fallback:** If the server returns 404, the client automatically falls back to `GET {baseUrl}/history/{projectId}` (legacy format) and converts the response.
+
+#### 排队发送（Queued Send）
+
+当服务端在 init 响应中返回 `capabilities.queuedSend.enabled: true` 时，启用排队发送功能。
+
+**行为**：
+
+- 用户在 AI 流式回复期间可以继续输入并发送消息
+- 这些消息加入 FIFO 队列，在当前 AI 回复结束后按序自动发送
+- 每条排队消息触发一轮独立的 SSE 流
+- 附件在入队时即完成上传，从队列删除消息时会清理对应附件
+
+**队列交互**：
+
+- **编辑**：点击队列项的铅笔图标，将该消息的内容和附件回填到输入框供修改（使用 `popQueuedMessage`，不会删除已上传的附件）
+- **删除**：点击 × 按钮移除该消息并清理附件（使用 `removeQueuedMessage`）
+- **拖拽排序**：通过左侧拖拽手柄（`GripVertical`）拖动队列项调整发送顺序（使用 `reorderQueue`）
+- **拖放目标高亮**：拖拽过程中目标位置边框变为主题色
+
+**附件输入方式**：
+
+- 点击附件按钮选择文件
+- 粘贴剪贴板中的图片（`Ctrl/Cmd+V`）
+- 拖放文件到输入框区域（边框变色提示可放置）
+
+**限制**：
+
+- 队列最大容量由 `maxQueueSize` 控制
+- 当存在 `ask_user` 或 `tool_result (awaiting_user)` 交互时，自动排空暂停
+- 停止当前生成后，队列中的下一条消息将自动发送
 
 ### DELETE `{deleteUrl}`
 

@@ -192,6 +192,7 @@ const server = createServer((req, res) => {
         search: { enabled: true, defaultOn: false },
         attachment: { enabled: true, accept: "image/*,.pdf,.doc,.docx,.txt", maxFileSize: 10485760, maxCount: 5, uploadUrl: "/api/mock-chat/upload", deleteUrl: "/api/mock-chat/attachment/{attachmentId}" },
         reset: { enabled: true, clearUrl: "/api/mock-chat/conversation/{projectId}" },
+        queuedSend: { enabled: true, maxQueueSize: 5 },
       },
       subAgents: [
         { id: "sub-research", name: "Research Agent", avatarUrl: "https://api.dicebear.com/9.x/bottts/svg?seed=research" },
@@ -206,8 +207,14 @@ const server = createServer((req, res) => {
     const chunks = [];
     req.on("data", c => chunks.push(c));
     req.on("end", () => {
+      const body = Buffer.concat(chunks);
+      const header = body.subarray(0, Math.min(body.length, 1024)).toString("binary");
+      const nameMatch = header.match(/filename="([^"]+)"/);
+      const ctMatch = header.match(/Content-Type:\s*(\S+)/i);
+      const fileName = nameMatch ? nameMatch[1] : "uploaded-file";
+      const mimeType = ctMatch ? ctMatch[1].replace(/[\r\n]+$/, "") : "application/octet-stream";
       const id = `att-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-      sendJson(res, 200, { id, name: "uploaded-file", size: Buffer.concat(chunks).length, type: "application/octet-stream", url: `https://mock.example.com/files/${id}`, processedData: { description: "Mock processed result" } });
+      sendJson(res, 200, { id, name: fileName, size: body.length, type: mimeType, url: `https://mock.example.com/files/${id}`, processedData: { description: "Mock processed result" } });
     });
     return;
   }

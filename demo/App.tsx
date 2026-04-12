@@ -19,19 +19,20 @@ const LANG_OPTIONS: { value: string; label: string }[] = [
 interface AppStrings {
   navDemo: string;
   navApi: string;
+  navBackend: string;
   langLabel: string;
   lightMode: string;
   darkMode: string;
 }
 
 const APP_I18N: Record<string, AppStrings> = {
-  "zh-CN": { navDemo: "演示", navApi: "API", langLabel: "语言", lightMode: "切换为浅色", darkMode: "切换为深色" },
-  "zh-TW": { navDemo: "演示", navApi: "API", langLabel: "語言", lightMode: "切換為淺色", darkMode: "切換為深色" },
-  en:      { navDemo: "Demo", navApi: "API", langLabel: "Lang", lightMode: "Switch to light", darkMode: "Switch to dark" },
-  ja:      { navDemo: "デモ", navApi: "API", langLabel: "言語", lightMode: "ライトモード", darkMode: "ダークモード" },
-  ko:      { navDemo: "데모", navApi: "API", langLabel: "언어", lightMode: "라이트 모드", darkMode: "다크 모드" },
-  es:      { navDemo: "Demo", navApi: "API", langLabel: "Idioma", lightMode: "Modo claro", darkMode: "Modo oscuro" },
-  fr:      { navDemo: "Démo", navApi: "API", langLabel: "Langue", lightMode: "Mode clair", darkMode: "Mode sombre" },
+  "zh-CN": { navDemo: "演示", navApi: "API", navBackend: "后端对接", langLabel: "语言", lightMode: "切换为浅色", darkMode: "切换为深色" },
+  "zh-TW": { navDemo: "演示", navApi: "API", navBackend: "後端對接", langLabel: "語言", lightMode: "切換為淺色", darkMode: "切換為深色" },
+  en:      { navDemo: "Demo", navApi: "API", navBackend: "Backend", langLabel: "Lang", lightMode: "Switch to light", darkMode: "Switch to dark" },
+  ja:      { navDemo: "デモ", navApi: "API", navBackend: "バックエンド", langLabel: "言語", lightMode: "ライトモード", darkMode: "ダークモード" },
+  ko:      { navDemo: "데모", navApi: "API", navBackend: "백엔드", langLabel: "언어", lightMode: "라이트 모드", darkMode: "다크 모드" },
+  es:      { navDemo: "Demo", navApi: "API", navBackend: "Backend", langLabel: "Idioma", lightMode: "Modo claro", darkMode: "Modo oscuro" },
+  fr:      { navDemo: "Démo", navApi: "API", navBackend: "Backend", langLabel: "Langue", lightMode: "Mode clair", darkMode: "Mode sombre" },
 };
 
 function readStorage(key: string, fallback: string): string {
@@ -101,6 +102,7 @@ export default function App() {
           <nav className="flex items-center gap-1">
             <NavLink to="/demo" className={navCls}>{t.navDemo}</NavLink>
             <NavLink to="/api" className={navCls}>{t.navApi}</NavLink>
+            <NavLink to="/backend" className={navCls}>{t.navBackend}</NavLink>
           </nav>
 
           <div className="flex flex-1 flex-wrap items-center justify-end gap-2 sm:gap-3">

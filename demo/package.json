@@ -9,8 +9,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@skillpet/chat-core": "workspace:*",
     "@skillpet/chat-react": "workspace:*",
-    "@skillpet/chat-core": "workspace:*"
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1"
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.19",
