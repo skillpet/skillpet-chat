@@ -2,6 +2,14 @@
 
 SSE streaming AI chat panel component library — React & Vue 3 dual-framework, i18n 7 languages, fully customizable.
 
+## Related Docs
+
+- **This document**: Frontend component API reference
+- [Backend Integration Guide](https://chat.skill.pet/backend-guide.md): HTTP API spec, SSE event protocol, message storage schema, System Prompt best practices
+- [llms.txt](https://chat.skill.pet/llms.txt): Document index for AI agents
+
+## Links
+
 - npm: [@skillpet/chat-react](https://www.npmjs.com/package/@skillpet/chat-react)
 - npm: [@skillpet/chat-vue](https://www.npmjs.com/package/@skillpet/chat-vue)
 - npm: [@skillpet/chat-core](https://www.npmjs.com/package/@skillpet/chat-core)

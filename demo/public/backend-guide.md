@@ -4,6 +4,12 @@
 >
 > 组件版本：`@skillpet/chat-core@0.6.0` / `@skillpet/chat-react@0.6.0`
 
+## Related Docs
+
+- **This document**: Backend HTTP API spec, SSE event protocol, message storage schema
+- [Frontend API Reference](https://chat.skill.pet/api.md): Component API — types, props, hooks, queued send, attachment handling
+- [llms.txt](https://chat.skill.pet/llms.txt): Document index for AI agents
+
 ---
 
 ## 1. 整体架构

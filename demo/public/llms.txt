@@ -4,7 +4,8 @@
 
 ## Docs
 
-- [API Reference (Markdown)](https://chat.skill.pet/api.md): Full API documentation for @skillpet/chat-react, @skillpet/chat-vue, and @skillpet/chat-core — types, props, hooks, and usage examples.
+- [API Reference](https://chat.skill.pet/api.md): Frontend component API — types, props, hooks, queued send, attachment handling, and usage examples.
+- [Backend Integration Guide](https://chat.skill.pet/backend-guide.md): HTTP API spec, SSE event protocol, message storage schema, System Prompt best practices.
 
 ## Links
 
@@ -12,4 +13,4 @@
 - npm: https://www.npmjs.com/package/@skillpet/chat-vue
 - npm: https://www.npmjs.com/package/@skillpet/chat-core
 - Demo: https://chat.skill.pet
-- GitHub (examples): https://github.com/skillpet/skillpet-chat
+- GitHub: https://github.com/skillpet/skillpet-chat
