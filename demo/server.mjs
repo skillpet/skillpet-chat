@@ -79,8 +79,8 @@ async function runDefaultStream(res, msg) {
   for (const p of tp) { await randomDelay(); sseWrite(res, "thinking", { content: p }); }
   sseWrite(res, "thinking_done", {});
   const body = en
-    ? `Here is a **demo** reply from the mock server.\n\n- Bullet one\n- Bullet two\n\nInline \`code\` and a [link](https://example.com).\n\n> The stream uses \`token\` events so Markdown renders progressively.\n\nTry keywords **tool**, **plan**, **choose** (or a lone **ask**), **form**, or **选择** / **方案** / **工具** / **表单** for other scenarios.`
-    : `这是 **Mock SSE** 返回的演示回复。\n\n- 要点一\n- 要点二\n\n行内 \`代码\` 与 [链接示例](https://example.com)。\n\n> 流式 \`token\` 会逐步拼接，便于观察 Markdown 渲染。\n\n试试输入 **工具**、**方案**、**选择**、**表单** 等关键词体验其它场景；英文可单独输入 **ask** 或 **form** 触发提问/表单演示。`;
+    ? `Here is a **demo** reply from the mock server.\n\n- Bullet one\n- Bullet two\n\nInline \`code\` and a [link](https://example.com).\n\n> The stream uses \`token\` events so Markdown renders progressively.\n\nTry keywords **tool**, **plan**, **choose** (or **ask**), **form** for other scenarios; **image** for single display, **select image** for selection, **multi select image** for multi-select.`
+    : `这是 **Mock SSE** 返回的演示回复。\n\n- 要点一\n- 要点二\n\n行内 \`代码\` 与 [链接示例](https://example.com)。\n\n> 流式 \`token\` 会逐步拼接，便于观察 Markdown 渲染。\n\n试试输入 **工具**、**方案**、**选择**、**表单** 等关键词体验其它场景；输入 **图片** 查看单图展示，**选图片** 单选，**多选图片** 多选；英文可输入 **ask** 或 **form** 触发提问/表单，**image** 触发图片生成。`;
   await streamTextAsTokens(res, body, en ? "word" : "char");
   sseWrite(res, "done", {});
 }
@@ -141,7 +141,7 @@ async function handleStreamPost(req, res) {
 
   if (isImageGen) {
     let mode = "display";
-    let imageCount = 1;
+    let imageCount = 4;
     if (lowerContent.includes("选") || lowerContent.includes("select")) {
       if (lowerContent.includes("多选") || lowerContent.includes("multi")) {
         mode = "multi_select";
@@ -150,8 +150,6 @@ async function handleStreamPost(req, res) {
         mode = "single_select";
         imageCount = 4;
       }
-    } else if (lowerContent.includes("多") || lowerContent.includes("multi")) {
-      imageCount = 4;
     }
 
     const blockId = `img-gen-${Date.now()}`;
