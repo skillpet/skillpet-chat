@@ -3,8 +3,6 @@ dist/
 *.log
 .DS_Store
 .cursor/
-
-# npm 包源码不开源
 packages/
 demo-vue/
 docs/
@@ -13,11 +11,7 @@ docs/
 .pnpm-approve-builds.json
 pnpm-lock.yaml
 pnpm-workspace.yaml
-
-# 根目录 monorepo 配置（不公开）
 /package.json
 /tsconfig.json
-
-# 内部工具 / 文档
 sync-private.sh
 实施规则.md
