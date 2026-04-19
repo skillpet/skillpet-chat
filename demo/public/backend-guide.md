@@ -2,7 +2,7 @@
 
 > 本文档面向接入 `@skillpet/chat-react`（或 `@skillpet/chat-vue`）组件的后端开发者，详细说明组件期望的 HTTP 接口规范、SSE 事件协议、消息存储格式以及智能体系统提示词建议。
 >
-> 组件版本：`@skillpet/chat-core@0.6.0` / `@skillpet/chat-react@0.6.0`
+> 组件版本：`@skillpet/chat-core@0.7.0` / `@skillpet/chat-react@0.7.0`
 
 ## Related Docs
 
@@ -80,6 +80,9 @@ interface ChatInitData {
   capabilities: {
     thinking: CapToggle;       // 深度思考
     search: CapToggle;         // 联网搜索
+    imageGeneration?: {         // 图片生成能力（v0.7）
+      enabled: boolean;
+    };
     reset?: ResetCap;          // 清空对话
     attachment?: AttachmentCap; // 附件上传
     queuedSend?: QueuedSendCap; // 排队发送
@@ -151,6 +154,7 @@ router.get('/init/:projectId', async (req, res) => {
     capabilities: {
       thinking: { enabled: true, defaultOn: false },
       search: { enabled: true, defaultOn: false },
+      imageGeneration: { enabled: true },
       reset: {
         enabled: true,
         clearUrl: '/api/projects/{projectId}/conversation',
@@ -228,6 +232,12 @@ X-Accel-Buffering: no
 **示例**：若 `clearUrl` 为 `/api/projects/{projectId}/conversation`，实际请求为 `DELETE /api/projects/abc123/conversation`。
 
 **响应**：`200` 即可（组件只检查 `res.ok`）。
+
+---
+
+### 2.6 POST `{baseUrl}/image-select/{projectId}`（v0.7）
+
+接收用户的图片选择结果。详见「3.7 图片生成事件」。
 
 ---
 
@@ -561,7 +571,98 @@ AI 生成的文本内容，前端逐步拼接显示。
 
 ---
 
-### 3.7 事件发送顺序参考
+### 3.7 图片生成事件（v0.7）
+
+当后端需要向用户展示 AI 生成的图片时，使用以下两个事件：
+
+#### `image_generating`
+
+图片正在生成时推送，前端展示加载骨架屏。
+
+```typescript
+sendSSE(res, 'image_generating', {
+  id: 'img-gen-001',          // 图片生成块唯一 ID
+  prompt: '一只可爱的猫',      // 可选：生成提示词
+});
+```
+
+#### `image_generation`
+
+图片生成完成时推送。`id` 需与 `image_generating` 的 `id` 匹配，前端会自动替换骨架屏。
+
+```typescript
+sendSSE(res, 'image_generation', {
+  id: 'img-gen-001',
+  prompt: '一只可爱的猫',
+  images: [
+    {
+      id: 'img-0',
+      url: 'https://cdn.example.com/full/img-0.png',
+      thumbnailUrl: 'https://cdn.example.com/thumb/img-0.png',  // 可选
+      label: '方案 A',     // 可选：图片标签
+      width: 512,          // 可选
+      height: 512,         // 可选
+    },
+    // ... 更多图片
+  ],
+  mode: 'single_select',  // 'display' | 'single_select' | 'multi_select'
+  minSelect: 1,           // 仅选择模式，最少选择数
+  maxSelect: 1,           // 仅选择模式，最多选择数
+  actions: [              // 可选：操作按钮
+    { id: 'regenerate', label: '重新生成' },
+    { id: 'download', label: '下载', variant: 'default' },
+  ],
+});
+```
+
+**展示模式说明**：
+
+| mode | 说明 | 用户交互 |
+|------|------|---------|
+| `display` | 纯展示 | 点击放大预览，无需用户选择 |
+| `single_select` | 单选 | 用户选择一张后点击确认 |
+| `multi_select` | 多选 | 用户选择 min~max 张后点击确认 |
+
+- `display` 模式不需要 `minSelect` / `maxSelect` / `actions`
+- 选择模式下用户确认后，前端会 POST 选择结果到 `{baseUrl}/image-select/{projectId}`
+
+**流式顺序**：`delta`（thinking → content）→ `image_generating` → 等待生成 → `image_generation` → `done`
+
+#### POST `{baseUrl}/image-select/{projectId}`
+
+用户在图片选择模式下确认选择后，前端发送：
+
+```
+POST {baseUrl}/image-select/{projectId}
+Content-Type: application/json
+Authorization: Bearer <token>
+
+{
+  "blockId": "img-gen-001",
+  "selectedImageIds": ["img-0", "img-2"],
+  "actionId": "regenerate"    // 可选：用户点击的操作按钮 ID
+}
+```
+
+- `actionId` 为 `download` 时前端不会发送请求（由浏览器处理下载）
+- 后端应返回 `200` 和 `{ "success": true }`
+
+#### 历史消息存储
+
+图片生成消息建议以 `role: "tool"` 存储，body 前缀 `[image_generation]`：
+
+```json
+{
+  "role": "tool",
+  "content": "[image_generation] {\"id\":\"img-gen-001\",\"prompt\":\"一只可爱的猫\",\"images\":[...],\"mode\":\"single_select\",\"status\":\"selected\",\"selectedImageIds\":[\"img-0\"]}"
+}
+```
+
+前端 `parseHistoryMessages` 会自动识别该格式并还原为图片展示 UI。
+
+---
+
+### 3.8 事件发送顺序参考
 
 一次典型的对话 SSE 流：
 
@@ -927,6 +1028,7 @@ router.get('/init/:projectId', async (req, res) => {
     capabilities: {
       thinking: { enabled: true, defaultOn: false },
       search: { enabled: false, defaultOn: false },
+      imageGeneration: { enabled: true },
       reset: { enabled: true, clearUrl: '/api/projects/{projectId}/conversation' },
     },
     messages: [], // { id, role, content }[]
@@ -1035,5 +1137,7 @@ export default router;
 | `agent_tool_result` | `parentId, name, summary, status` | 子智能体工具结果 |
 | `agent_round` | `{ id: string }` | 子智能体新一轮 |
 | `resource_updated` | `key: string, snapshot?: object` | 资源变更 |
+| `image_generating` | `id, prompt?` | 图片生成中（v0.7） |
+| `image_generation` | `id, prompt?, images, mode, minSelect?, maxSelect?, actions?` | 图片生成完成（v0.7） |
 | `done` | `{ conversationId: string }` | 对话完成 |
 | `error` | `{ message: string }` | 错误 |
