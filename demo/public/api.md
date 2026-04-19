@@ -95,7 +95,7 @@ Main component with full chat UI, input box, message list, and tool interaction.
 | `projectId` | `string` | Yes | Project / conversation ID |
 | `config` | `ChatPanelConfig` | No | API endpoints, auth; can also be injected via ChatProvider |
 | `onStatusChange` | `() => void` | No | Callback when SSE stream ends |
-| `onResourceUpdated` | `(key: string, snapshot?: string) => void` | No | Resource update event callback |
+| `onResourceUpdated` | `(key: string, snapshot?: Record<string, unknown>) => void` | No | Resource update event callback |
 | `extraSlashCommands` | `SlashCommand[]` | No | Additional slash commands |
 | `quickStarters` | `string[]` | No | Quick starter prompts for empty state |
 | `emptyState` | `ChatPanelEmptyState` | No | Custom empty state icon, title, subtitle |
@@ -152,7 +152,7 @@ Headless hook that returns all chat panel state and actions for fully custom UI.
 | `projectId` | `string` | Yes | Project / conversation ID |
 | `config` | `ChatPanelConfig` | Yes | API and auth config |
 | `onStatusChange` | `() => void` | No | Status change callback |
-| `onResourceUpdated` | `(key: string, snapshot?: string) => void` | No | Resource update callback |
+| `onResourceUpdated` | `(key: string, snapshot?: Record<string, unknown>) => void` | No | Resource update callback |
 | `extraSlashCommands` | `SlashCommand[]` | No | Additional slash commands |
 
 #### Return Values
@@ -200,6 +200,7 @@ Headless hook that returns all chat panel state and actions for fully custom UI.
 | `popQueuedMessage` | `(id: string) => QueuedMessage \| null` | 从队列中取出消息（不清理附件，用于编辑回填） |
 | `reorderQueue` | `(fromIndex: number, toIndex: number) => void` | 拖拽排序：将队列中 fromIndex 位置的消息移到 toIndex |
 | `clearQueue` | `() => void` | 清空队列 |
+| `handleImageSelect` | `(blockId: string, selectedImageIds: string[], actionId?: string) => Promise<void>` | 提交图片块选择结果（见「图片生成」） |
 
 ### MessageBubble
 
@@ -353,6 +354,7 @@ Converts backend history API raw messages into `ChatMessage[]`, handling ask_use
 | `thinking` | `string` | No | AI thinking process |
 | `toolResult` | `object` | No | Tool call result |
 | `askUser` | `{ questions: AskUserQuestion[], status: 'pending' \| 'answered' }` | No | Structured question data |
+| `imageGeneration` | `ImageGenerationBlock` | No | 图片生成块（独立 tool 消息或历史还原） |
 | `parts` | `MessagePart[]` | No | Multi-part message (tools, sub-agents, etc.) |
 | `isStreaming` | `boolean` | No | Whether streaming output |
 | `statusText` | `string` | No | Status hint text |
@@ -373,7 +375,7 @@ Converts backend history API raw messages into `ChatMessage[]`, handling ask_use
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `updateMessages` | `(updater: (prev: ChatMessage[]) => ChatMessage[]) => void` | Yes | Message state updater |
-| `onResourceUpdated` | `(key: string, snapshot?: string) => void` | No | Resource update callback |
+| `onResourceUpdated` | `(key: string, snapshot?: Record<string, unknown>) => void` | No | Resource update callback |
 | `onStatusChange` | `() => void` | No | Status change callback |
 | `onNoReader` | `() => void` | No | When response.body has no reader |
 | `onFinally` | `() => void` | No | Cleanup after stream ends or aborts |
@@ -386,6 +388,7 @@ Converts backend history API raw messages into `ChatMessage[]`, handling ask_use
 | `sseUnknownError` | `string` | Unknown error text |
 | `connectionLost` | `string` | Connection lost text |
 | `requestFailed` | `string` | Request failed text |
+| `errorPrefix` | `string` | 错误文案前缀（与 `message` 拼接展示） |
 
 ### ParseHistoryUiStrings
 
@@ -393,12 +396,13 @@ Converts backend history API raw messages into `ChatMessage[]`, handling ask_use
 |-------|------|-------------|
 | `askUserErrorLabel` | `string` | Parse failure tool name |
 | `askUserErrorMessage` | `string` | Parse failure hint |
+| `awaitingUserMarker` | `string` | 历史消息中标记「等待用户」的占位文案 |
 
 ### MessagePart
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `type` | `'text' \| 'tool' \| 'agent-text' \| 'agent-tools'` | Yes | Part type |
+| `type` | `'text' \| 'tool' \| 'agent-text' \| 'agent-tools' \| 'image-generation'` | Yes | Part type |
 | `content` | `string` | No | Text content |
 | `thinking` | `string` | No | Thinking content |
 | `toolResult` | `ToolInlineResult` | No | Tool inline result |
@@ -410,6 +414,7 @@ Converts backend history API raw messages into `ChatMessage[]`, handling ask_use
 | `preview` | `string` | No | Tool arguments preview |
 | `agentId` | `string` | No | **v0.5** Sub-agent ID (use with `subAgentMap` for metadata lookup) |
 | `agentAvatarUrl` | `string` | No | **@deprecated v0.5** — use `agentId` + `subAgentMap` instead |
+| `imageGeneration` | `ImageGenerationBlock` | No | 图片生成块（`type === 'image-generation'` 时使用） |
 
 ### AgentToolStep
 
@@ -490,6 +495,7 @@ Converts backend history API raw messages into `ChatMessage[]`, handling ask_use
 |-------|------|----------|-------------|
 | `thinking` | `CapToggle` | Yes | Deep thinking capability |
 | `search` | `CapToggle` | Yes | Web search capability |
+| `imageGeneration` | `{ enabled: boolean }` | No | 图片生成能力开关（`enabled: false` 时前端隐藏相关 UI） |
 | `attachment` | `AttachmentCap` | No | Attachment capability |
 | `reset` | `ResetCap` | No | Reset conversation capability |
 | `queuedSend` | `QueuedSendCap` | No | 排队发送配置；未提供或 `enabled: false` 时禁用排队 |
@@ -503,6 +509,117 @@ Converts backend history API raw messages into `ChatMessage[]`, handling ask_use
 | `subAgents` | `AgentInfo[]` | No | Sub-agent list for metadata pre-loading |
 | `userAvatarUrl` | `string` | No | Current user avatar URL |
 | `messages` | `Array<{id, role, content}>` | No | Conversation history |
+
+---
+
+## 图片生成 (Image Generation)
+
+### SSE 事件
+
+#### `image_generating`
+
+图片正在生成时推送，前端展示 loading 骨架屏。
+
+```
+event: image_generating
+data: { "id": "img-gen-001", "prompt": "一只可爱的猫" }
+```
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | string | 图片生成块唯一 ID |
+| prompt | string? | 生成提示词 |
+
+#### `image_generation`
+
+图片生成完成时推送。
+
+```
+event: image_generation
+data: {
+  "id": "img-gen-001",
+  "prompt": "一只可爱的猫",
+  "images": [
+    { "id": "img-0", "url": "https://...", "thumbnailUrl": "https://...", "label": "方案 A", "width": 512, "height": 512 }
+  ],
+  "mode": "single_select",
+  "minSelect": 1,
+  "maxSelect": 1,
+  "actions": [
+    { "id": "regenerate", "label": "重新生成" },
+    { "id": "download", "label": "下载" }
+  ]
+}
+```
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | string | 与 image_generating 的 id 对应 |
+| prompt | string? | 生成提示词 |
+| images | GeneratedImage[] | 生成的图片列表 |
+| mode | "display" \| "single_select" \| "multi_select" | 展示模式 |
+| minSelect | number? | 最少选择数（选择模式） |
+| maxSelect | number? | 最多选择数（选择模式） |
+| actions | ImageGenerationAction[]? | 操作按钮 |
+
+Demo Mock 行为：`multi_select` 时下发 `minSelect: 1`、`maxSelect: 3`；`display` / `single_select` 时不带 `minSelect` / `maxSelect`。流式顺序为 `delta`（thinking → content）→ `image_generating` → 等待生成 → `image_generation` → `done`。
+
+### 类型定义
+
+```typescript
+interface GeneratedImage {
+  id: string;
+  url: string;
+  thumbnailUrl?: string;
+  label?: string;
+  width?: number;
+  height?: number;
+}
+
+interface ImageGenerationAction {
+  id: string;
+  label: string;
+  variant?: "default" | "destructive";
+}
+
+interface ImageGenerationBlock {
+  id: string;
+  prompt?: string;
+  images: GeneratedImage[];
+  mode: "display" | "single_select" | "multi_select";
+  minSelect?: number;
+  maxSelect?: number;
+  actions?: ImageGenerationAction[];
+  selectedImageIds?: string[];
+  /** 客户端状态；SSE `image_generation` 事件可不包含，由前端写入 */
+  status?: "generating" | "pending" | "selected" | "actioned";
+}
+```
+
+### 展示模式
+
+| 模式 | 说明 | 用户交互 |
+|------|------|---------|
+| display | 纯展示 | 点击放大预览 |
+| single_select | 单选 | 选择一张后点确认 |
+| multi_select | 多选 | 选择 min~max 张后点确认 |
+
+### Hook / Composable 新增返回值
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| handleImageSelect | (blockId, selectedImageIds, actionId?) => Promise<void> | 提交图片选择结果 |
+
+### POST `{baseUrl}/image-select/{projectId}`
+
+客户端在用户确认选择或点击非 `download` 操作按钮时调用。请求体 JSON：
+
+```json
+{ "blockId": "img-gen-001", "selectedImageIds": ["img-0"], "actionId": "regenerate" }
+```
+
+- `actionId` 为 `download` 时前端不发送请求（由浏览器处理下载）。
+- Demo Mock：`POST /api/mock-chat/image-select/{projectId}` 返回 `200` 与 `{ "success": true }`。
 
 ---
 
@@ -625,6 +742,9 @@ The SSE stream expects the following event types from the server:
 | `thinking` | `{ content: string }` | AI thinking token |
 | `thinking_done` | `{}` | Thinking phase complete |
 | `token` | `{ content: string }` | Response text token |
+| `delta` | `{ type: "thinking" \| "content", content: string }` | 增量片段（如图片生成前的思考/正文） |
+| `image_generating` | `{ id: string, prompt?: string }` | 图片生成中（展示 loading） |
+| `image_generation` | `{ id, prompt?, images, mode, minSelect?, maxSelect?, actions? }` | 图片生成完成（字段见「图片生成」） |
 | `tool_start` | `{ id, name, label }` | Tool execution started |
 | `tool_result` | `{ id, name, label, status, message, mode?, options? }` | Tool execution result |
 | `ask_user` | `{ questions: AskUserQuestion[] }` | Structured user question |

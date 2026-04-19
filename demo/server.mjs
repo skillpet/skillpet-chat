@@ -124,8 +124,81 @@ async function runPlanScenario(res, msg) {
 async function handleStreamPost(req, res) {
   const raw = await readBody(req);
   let message = "";
-  try { message = JSON.parse(raw).message || ""; } catch { message = ""; }
+  try {
+    const body = JSON.parse(raw);
+    message = typeof body.message === "string" ? body.message : "";
+  } catch {
+    message = "";
+  }
   sseHeaders(res); res.statusCode = 200; res.flushHeaders?.();
+
+  const content = message;
+  const lowerContent = content.toLowerCase();
+  const isImageGen =
+    lowerContent.includes("图片") ||
+    lowerContent.includes("image") ||
+    lowerContent.includes("生成图");
+
+  if (isImageGen) {
+    let mode = "display";
+    let imageCount = 1;
+    if (lowerContent.includes("选") || lowerContent.includes("select")) {
+      if (lowerContent.includes("多选") || lowerContent.includes("multi")) {
+        mode = "multi_select";
+        imageCount = 6;
+      } else {
+        mode = "single_select";
+        imageCount = 4;
+      }
+    } else if (lowerContent.includes("多") || lowerContent.includes("multi")) {
+      imageCount = 4;
+    }
+
+    const blockId = `img-gen-${Date.now()}`;
+
+    res.write(`event: delta\ndata: ${JSON.stringify({ type: "thinking", content: "正在为您生成图片..." })}\n\n`);
+
+    await delay(500);
+    res.write(`event: delta\ndata: ${JSON.stringify({ type: "content", content: "好的，我来为您生成图片。\n\n" })}\n\n`);
+
+    await delay(500);
+    res.write(`event: image_generating\ndata: ${JSON.stringify({ id: blockId, prompt: content })}\n\n`);
+
+    await delay(2000);
+
+    const images = Array.from({ length: imageCount }, (_, i) => ({
+      id: `img-${i}`,
+      url: `https://picsum.photos/seed/${blockId}-${i}/512/512`,
+      thumbnailUrl: `https://picsum.photos/seed/${blockId}-${i}/256/256`,
+      label: `图片 ${i + 1}`,
+      width: 512,
+      height: 512,
+    }));
+
+    const genData = {
+      id: blockId,
+      prompt: content,
+      images,
+      mode,
+    };
+    if (mode === "multi_select") {
+      genData.minSelect = 1;
+      genData.maxSelect = 3;
+    }
+    if (mode !== "display") {
+      genData.actions = [
+        { id: "regenerate", label: "重新生成" },
+        { id: "download", label: "下载" },
+      ];
+    }
+
+    res.write(`event: image_generation\ndata: ${JSON.stringify(genData)}\n\n`);
+    await delay(300);
+    res.write(`event: done\ndata: {}\n\n`);
+    res.end();
+    return;
+  }
+
   try {
     const s = detectScenario(message);
     if (s === "tool") await runToolScenario(res, message);
@@ -140,11 +213,16 @@ async function handleStreamPost(req, res) {
 async function handleToolResponsePost(req, res) {
   const raw = await readBody(req);
   let optionId = "";
-  try { optionId = JSON.parse(raw).optionId || ""; } catch { optionId = ""; }
+  try {
+    const body = JSON.parse(raw);
+    optionId = typeof body.optionId === "string" ? body.optionId : "";
+  } catch {
+    optionId = "";
+  }
   sseHeaders(res); res.statusCode = 200; res.flushHeaders?.();
   const reply = ["A","B","C"].includes(optionId)
     ? `你已选择 **${optionId}**。Mock 流继续：接下来可按该方案拆分里程碑与验收标准。\n\n*(If you typed in English: you chose plan ${optionId} — next, define milestones and acceptance criteria.)*`
-    : `已收到选择 **${optionId || "（空）"}**，这是一条 Mock 续写回复。`;
+    : `已收到选择 **${optionId || "（空）"}**，这是一条 Mock 续写回复。\n\n*(EN) Selection received for option **${optionId || "∅"}**.*`;
   try { await streamTextAsTokens(res, reply, "char"); sseWrite(res, "done", {}); } catch (e) { sseWrite(res, "error", { message: e?.message || "MOCK_ERROR" }); sseWrite(res, "done", {}); }
   res.end();
 }
@@ -190,6 +268,7 @@ const server = createServer((req, res) => {
       capabilities: {
         thinking: { enabled: true, defaultOn: true },
         search: { enabled: true, defaultOn: false },
+        imageGeneration: { enabled: true },
         attachment: { enabled: true, accept: "image/*,.pdf,.doc,.docx,.txt", maxFileSize: 10485760, maxCount: 5, uploadUrl: "/api/mock-chat/upload", deleteUrl: "/api/mock-chat/attachment/{attachmentId}" },
         reset: { enabled: true, clearUrl: "/api/mock-chat/conversation/{projectId}" },
         queuedSend: { enabled: true, maxQueueSize: 5 },
@@ -214,7 +293,7 @@ const server = createServer((req, res) => {
       const fileName = nameMatch ? nameMatch[1] : "uploaded-file";
       const mimeType = ctMatch ? ctMatch[1].replace(/[\r\n]+$/, "") : "application/octet-stream";
       const id = `att-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-      sendJson(res, 200, { id, name: fileName, size: body.length, type: mimeType, url: `https://mock.example.com/files/${id}`, processedData: { description: "Mock processed result" } });
+      sendJson(res, 200, { id, name: fileName, size: body.length, type: mimeType, url: `https://mock.example.com/files/${id}`, processedData: { description: "Mock processed result: file content analyzed." } });
     });
     return;
   }
@@ -224,6 +303,10 @@ const server = createServer((req, res) => {
   }
   if (method === "POST" && pathname === "/api/mock-chat/tool-response") {
     handleToolResponsePost(req, res).catch(() => res.end());
+    return;
+  }
+  if (method === "POST" && pathname.startsWith("/api/mock-chat/image-select/")) {
+    sendJson(res, 200, { success: true });
     return;
   }
   if (method === "DELETE" && pathname === "/api/mock-chat/conversation/demo") {

@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { BotMessageSquare } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { BotMessageSquare, Palette } from "lucide-react";
 import {
   ChatPanel,
   type ChatPanelConfig,
@@ -52,7 +52,18 @@ const QUICK_STARTERS_BY_LANG: Record<string, string[]> = {
   ],
 };
 
-const ALL_CAPS = ["thinking", "search", "attachment", "reset", "queuedSend"] as const;
+const THEME_PRESETS = [
+  { name: "Blue",   color: "#3b82f6", light: "oklch(0.55 0.2 255)",   dark: "oklch(0.65 0.2 255)" },
+  { name: "Purple", color: "#7c3aed", light: "oklch(0.50 0.24 285)",  dark: "oklch(0.62 0.24 285)" },
+  { name: "Green",  color: "#10b981", light: "oklch(0.60 0.18 160)",  dark: "oklch(0.68 0.18 160)" },
+  { name: "Rose",   color: "#f43f5e", light: "oklch(0.55 0.22 15)",   dark: "oklch(0.62 0.22 15)" },
+  { name: "Orange", color: "#f97316", light: "oklch(0.62 0.20 55)",   dark: "oklch(0.68 0.20 55)" },
+  { name: "Teal",   color: "#14b8a6", light: "oklch(0.60 0.15 180)",  dark: "oklch(0.68 0.15 180)" },
+];
+
+const STORAGE_THEME_COLOR = "skillpet-chat-theme-color";
+
+const ALL_CAPS = ["thinking", "search", "attachment", "reset", "queuedSend", "imageGeneration"] as const;
 
 const CAP_LABELS: Record<string, Record<string, string>> = {
   thinking: { "zh-CN": "深度思考", en: "Thinking" },
@@ -60,11 +71,46 @@ const CAP_LABELS: Record<string, Record<string, string>> = {
   attachment: { "zh-CN": "附件", en: "Attachment" },
   reset: { "zh-CN": "重置", en: "Reset" },
   queuedSend: { "zh-CN": "排队发送", en: "Queued Send" },
+  imageGeneration: { "zh-CN": "图片生成", en: "Image Generation" },
 };
 
 export default function ChatDemoPage() {
   const lang = useLang();
   const [capOverride, setCapOverride] = useState<string[]>([...ALL_CAPS]);
+  const [activeTheme, setActiveTheme] = useState(() => {
+    try { return localStorage.getItem(STORAGE_THEME_COLOR) ?? ""; } catch { return ""; }
+  });
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = containerRef.current?.querySelector(".skillpet-chat") as HTMLElement | null;
+    if (!el) return;
+    if (!activeTheme) {
+      el.style.removeProperty("--skillpet-chat-primary");
+      return;
+    }
+    const preset = THEME_PRESETS.find((p) => p.color === activeTheme);
+    if (preset) {
+      const isDark = document.documentElement.classList.contains("dark");
+      el.style.setProperty("--skillpet-chat-primary", isDark ? preset.dark : preset.light);
+    }
+    try { localStorage.setItem(STORAGE_THEME_COLOR, activeTheme); } catch {}
+  }, [activeTheme]);
+
+  useEffect(() => {
+    if (!activeTheme) return;
+    const observer = new MutationObserver(() => {
+      const el = containerRef.current?.querySelector(".skillpet-chat") as HTMLElement | null;
+      if (!el) return;
+      const preset = THEME_PRESETS.find((p) => p.color === activeTheme);
+      if (preset) {
+        const isDark = document.documentElement.classList.contains("dark");
+        el.style.setProperty("--skillpet-chat-primary", isDark ? preset.dark : preset.light);
+      }
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, [activeTheme]);
 
   const toggleCap = (cap: string) =>
     setCapOverride((prev) =>
@@ -110,7 +156,7 @@ export default function ChatDemoPage() {
   }, [lang]);
 
   return (
-    <main className="flex min-h-0 flex-1 flex-col p-4">
+    <main className="flex min-h-0 flex-1 flex-col p-4" ref={containerRef}>
       <div className="flex items-center gap-2 mb-3 flex-wrap">
         <span className="text-xs text-muted-foreground mr-1">{lang.startsWith("zh") ? "功能开关：" : "Capabilities:"}</span>
         {ALL_CAPS.map((cap) => (
@@ -125,6 +171,31 @@ export default function ChatDemoPage() {
             }`}
           >
             {CAP_LABELS[cap]?.[lang.startsWith("zh") ? "zh-CN" : "en"] ?? cap}
+          </button>
+        ))}
+
+        <span className="hidden sm:block h-4 w-px bg-border mx-1" />
+
+        <span className="text-xs text-muted-foreground mr-1 flex items-center gap-1">
+          <Palette className="h-3 w-3" />
+          {lang.startsWith("zh") ? "主题色：" : "Theme:"}
+        </span>
+        {THEME_PRESETS.map((preset) => (
+          <button
+            key={preset.color}
+            type="button"
+            onClick={() => setActiveTheme(activeTheme === preset.color ? "" : preset.color)}
+            title={preset.name}
+            className="relative h-5 w-5 rounded-full border-2 transition-all hover:scale-110"
+            style={{
+              backgroundColor: preset.color,
+              borderColor: activeTheme === preset.color ? preset.color : "transparent",
+              boxShadow: activeTheme === preset.color ? `0 0 0 2px ${preset.color}40` : "none",
+            }}
+          >
+            {activeTheme === preset.color && (
+              <span className="absolute inset-0 flex items-center justify-center text-white text-[10px] font-bold">✓</span>
+            )}
           </button>
         ))}
       </div>

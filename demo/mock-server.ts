@@ -290,6 +290,77 @@ async function handleStreamPost(req: IncomingMessage, res: ServerResponse): Prom
   res.statusCode = 200;
   res.flushHeaders?.();
 
+  const content = message;
+  const lowerContent = content.toLowerCase();
+  const isImageGen =
+    lowerContent.includes("图片") ||
+    lowerContent.includes("image") ||
+    lowerContent.includes("生成图");
+
+  if (isImageGen) {
+    let mode: "display" | "single_select" | "multi_select" = "display";
+    let imageCount = 1;
+    if (lowerContent.includes("选") || lowerContent.includes("select")) {
+      if (lowerContent.includes("多选") || lowerContent.includes("multi")) {
+        mode = "multi_select";
+        imageCount = 6;
+      } else {
+        mode = "single_select";
+        imageCount = 4;
+      }
+    } else if (lowerContent.includes("多") || lowerContent.includes("multi")) {
+      imageCount = 4;
+    }
+
+    const blockId = `img-gen-${Date.now()}`;
+
+    res.write(
+      `event: delta\ndata: ${JSON.stringify({ type: "thinking", content: "正在为您生成图片..." })}\n\n`,
+    );
+
+    await delay(500);
+    res.write(
+      `event: delta\ndata: ${JSON.stringify({ type: "content", content: "好的，我来为您生成图片。\n\n" })}\n\n`,
+    );
+
+    await delay(500);
+    res.write(`event: image_generating\ndata: ${JSON.stringify({ id: blockId, prompt: content })}\n\n`);
+
+    await delay(2000);
+
+    const images = Array.from({ length: imageCount }, (_, i) => ({
+      id: `img-${i}`,
+      url: `https://picsum.photos/seed/${blockId}-${i}/512/512`,
+      thumbnailUrl: `https://picsum.photos/seed/${blockId}-${i}/256/256`,
+      label: `图片 ${i + 1}`,
+      width: 512,
+      height: 512,
+    }));
+
+    const genData: Record<string, unknown> = {
+      id: blockId,
+      prompt: content,
+      images,
+      mode,
+    };
+    if (mode === "multi_select") {
+      genData.minSelect = 1;
+      genData.maxSelect = 3;
+    }
+    if (mode !== "display") {
+      genData.actions = [
+        { id: "regenerate", label: "重新生成" },
+        { id: "download", label: "下载" },
+      ];
+    }
+
+    res.write(`event: image_generation\ndata: ${JSON.stringify(genData)}\n\n`);
+    await delay(300);
+    res.write(`event: done\ndata: {}\n\n`);
+    res.end();
+    return;
+  }
+
   const scenario = detectScenario(message);
   try {
     switch (scenario) {
@@ -370,6 +441,7 @@ function mockChatMiddleware(): Connect.NextHandleFunction {
           capabilities: {
             thinking: { enabled: true, defaultOn: true },
             search: { enabled: true, defaultOn: false },
+            imageGeneration: { enabled: true },
             attachment: {
               enabled: true,
               accept: "image/*,.pdf,.doc,.docx,.txt",
@@ -401,6 +473,11 @@ function mockChatMiddleware(): Connect.NextHandleFunction {
 
       if (method === "POST" && pathname === "/api/mock-chat/tool-response") {
         await handleToolResponsePost(req, res);
+        return;
+      }
+
+      if (method === "POST" && pathname.startsWith("/api/mock-chat/image-select/")) {
+        sendJson(res, 200, { success: true });
         return;
       }
 
