@@ -4,11 +4,13 @@
  */
 import { createServer } from "node:http";
 import { readFileSync, existsSync, statSync } from "node:fs";
-import { join, extname } from "node:path";
+import { join, resolve, extname, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const DIST = join(__dirname, "dist");
+const DIST_ROOT = resolve(DIST);
+const MAX_UPLOAD_SIZE = 10 * 1024 * 1024; // 10MB
 const PORT = parseInt(process.env.PORT || "3300", 10);
 
 const MIME = {
@@ -237,17 +239,31 @@ const indexHtml = readFileSync(join(DIST, "index.html"), "utf8");
 
 function serveStatic(req, res) {
   const url = new URL(req.url, "http://localhost");
-  let filePath = join(DIST, url.pathname);
+  let pathnameDecoded;
+  try {
+    pathnameDecoded = decodeURIComponent(url.pathname);
+  } catch {
+    res.writeHead(400);
+    res.end("Bad Request");
+    return true;
+  }
+  const resolved = resolve(DIST_ROOT, "." + pathnameDecoded);
+  const distPrefix = DIST_ROOT.endsWith(sep) ? DIST_ROOT : DIST_ROOT + sep;
+  if (resolved !== DIST_ROOT && !resolved.startsWith(distPrefix)) {
+    res.writeHead(403);
+    res.end("Forbidden");
+    return true;
+  }
 
-  if (existsSync(filePath) && statSync(filePath).isFile()) {
-    const ext = extname(filePath);
+  if (existsSync(resolved) && statSync(resolved).isFile()) {
+    const ext = extname(resolved);
     const mime = MIME[ext] || "application/octet-stream";
     res.setHeader("Content-Type", mime);
     if (url.pathname.startsWith("/assets/")) {
       res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
     }
     res.statusCode = 200;
-    res.end(readFileSync(filePath));
+    res.end(readFileSync(resolved));
     return true;
   }
   return false;
@@ -281,9 +297,30 @@ const server = createServer((req, res) => {
     return;
   }
   if (method === "POST" && pathname === "/api/mock-chat/upload") {
+    const contentLength = req.headers["content-length"];
+    if (contentLength) {
+      const n = Number(contentLength);
+      if (Number.isFinite(n) && n > MAX_UPLOAD_SIZE) {
+        sendJson(res, 413, { error: "File too large", maxSize: "10MB" });
+        return;
+      }
+    }
     const chunks = [];
-    req.on("data", c => chunks.push(c));
+    let totalSize = 0;
+    let aborted = false;
+    req.on("data", c => {
+      if (aborted) return;
+      totalSize += c.length;
+      if (totalSize > MAX_UPLOAD_SIZE) {
+        aborted = true;
+        sendJson(res, 413, { error: "File too large", maxSize: "10MB" });
+        req.destroy();
+        return;
+      }
+      chunks.push(c);
+    });
     req.on("end", () => {
+      if (aborted) return;
       const body = Buffer.concat(chunks);
       const header = body.subarray(0, Math.min(body.length, 1024)).toString("binary");
       const nameMatch = header.match(/filename="([^"]+)"/);

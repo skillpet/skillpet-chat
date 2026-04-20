@@ -4,6 +4,8 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import type { Connect, Plugin } from "vite";
 
+const MAX_UPLOAD_SIZE = 10 * 1024 * 1024; // 10MB
+
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -480,9 +482,30 @@ function mockChatMiddleware(): Connect.NextHandleFunction {
       }
 
       if (method === "POST" && pathname === "/api/mock-chat/upload") {
+        const contentLength = req.headers["content-length"];
+        if (contentLength) {
+          const n = Number(contentLength);
+          if (Number.isFinite(n) && n > MAX_UPLOAD_SIZE) {
+            sendJson(res, 413, { error: "File too large", maxSize: "10MB" });
+            return;
+          }
+        }
         const chunks: Buffer[] = [];
-        req.on("data", (c: Buffer) => chunks.push(c));
+        let totalSize = 0;
+        let aborted = false;
+        req.on("data", (c: Buffer) => {
+          if (aborted) return;
+          totalSize += c.length;
+          if (totalSize > MAX_UPLOAD_SIZE) {
+            aborted = true;
+            sendJson(res, 413, { error: "File too large", maxSize: "10MB" });
+            req.destroy();
+            return;
+          }
+          chunks.push(c);
+        });
         req.on("end", () => {
+          if (aborted) return;
           const body = Buffer.concat(chunks);
           const header = body.subarray(0, Math.min(body.length, 1024)).toString("binary");
           const nameMatch = header.match(/filename="([^"]+)"/);
