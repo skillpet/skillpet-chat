@@ -59,7 +59,7 @@ async function streamTextAsTokens(
   }
 }
 
-type Scenario = "default" | "tool" | "ask" | "plan" | "form";
+type Scenario = "default" | "tool" | "ask" | "plan" | "form" | "resource";
 
 function detectScenario(message: string): Scenario {
   const m = message.toLowerCase();
@@ -67,6 +67,14 @@ function detectScenario(message: string): Scenario {
   if (m.includes("工具") || /\btool\b/.test(m)) return "tool";
   if (m.includes("方案") || /\bplan\b/.test(m)) return "plan";
   if (m.includes("表单") || /\bform\b/.test(m)) return "form";
+  if (
+    m.includes("角色") ||
+    m.includes("资源") ||
+    /\bcharacters\b/.test(m) ||
+    /\bresource\b/.test(m)
+  ) {
+    return "resource";
+  }
   if (
     m.includes("选择") ||
     /\bchoose\b/i.test(m) ||
@@ -102,11 +110,11 @@ async function runDefaultStream(res: ServerResponse, message: string): Promise<v
     ? `Here is a **demo** reply from the mock server.\n\n- Bullet one\n- Bullet two\n\n` +
       `Inline \`code\` and a [link](https://example.com).\n\n` +
       `> The stream uses \`token\` events so Markdown renders progressively.\n\n` +
-      `Try keywords **tool**, **plan**, **choose** (or **ask**), **form** for other scenarios; **image** for single display, **select image** for selection, **multi select image** for multi-select.`
+      `Try keywords **tool**, **plan**, **choose** (or **ask**), **form** for other scenarios; type **characters** or **resource** to see the structured \`resource\` SSE demo; **image** for single display, **select image** for selection, **multi select image** for multi-select.`
     : `这是 **Mock SSE** 返回的演示回复。\n\n- 要点一\n- 要点二\n\n` +
       `行内 \`代码\` 与 [链接示例](https://example.com)。\n\n` +
       `> 流式 \`token\` 会逐步拼接，便于观察 Markdown 渲染。\n\n` +
-      `试试输入 **工具**、**方案**、**选择**、**表单** 等关键词体验其它场景；输入 **图片** 查看单图展示，**选图片** 单选，**多选图片** 多选；英文可输入 **ask** 或 **form** 触发提问/表单，**image** 触发图片生成。`;
+      `试试输入 **工具**、**方案**、**选择**、**表单** 等关键词体验其它场景；输入 **角色** 或 **characters** 查看结构化 \`resource\` 演示（也可输入 **resource** / **资源**）；输入 **图片** 查看单图展示，**选图片** 单选，**多选图片** 多选；英文可输入 **ask** 或 **form** 触发提问/表单，**image** 触发图片生成。`;
 
   await streamTextAsTokens(res, body, en ? "word" : "char");
   sseWrite(res, "done", {});
@@ -253,6 +261,25 @@ async function runFormScenario(res: ServerResponse, message: string): Promise<vo
   sseWrite(res, "ask_user", { questions });
 }
 
+async function runResourceScenario(res: ServerResponse): Promise<void> {
+  await randomDelay();
+  sseWrite(res, "token", { content: "已从故事中提取了 3 个角色：" });
+  sseWrite(res, "resource", {
+    resourceType: "characters",
+    data: [
+      { name: "叶无锋", role: "protagonist", gender: "male" },
+      { name: "苏婉儿", role: "lead", gender: "female" },
+      { name: "老管家", role: "supporting", gender: "male" },
+    ],
+    fallbackText: "已提取 3 个角色：叶无锋、苏婉儿、老管家",
+  });
+  await randomDelay();
+  sseWrite(res, "token", {
+    content: "\n\n每个角色的性格和背景已整理完毕，可以继续分析场景。",
+  });
+  sseWrite(res, "done", {});
+}
+
 async function runPlanScenario(res: ServerResponse, message: string): Promise<void> {
   const en = isLikelyEnglish(message);
   sseWrite(res, "tool_result", {
@@ -376,6 +403,9 @@ async function handleStreamPost(req: IncomingMessage, res: ServerResponse): Prom
       case "plan":
         await runPlanScenario(res, message);
         break;
+      case "resource":
+        await runResourceScenario(res);
+        break;
       default:
         await runDefaultStream(res, message);
         break;
@@ -462,6 +492,7 @@ function mockChatMiddleware(): Connect.NextHandleFunction {
           ],
           userAvatarUrl: "https://api.dicebear.com/9.x/thumbs/svg?seed=user",
           messages: [],
+          hint: "输入 **角色** 或 **characters** 查看 resource 结构化数据演示（也可输入 **resource** / **资源**）。",
         });
         return;
       }

@@ -104,6 +104,8 @@ Main component with full chat UI, input box, message list, and tool interaction.
 | `capVisibleOverride` | `string[]` | No | Override init capabilities visibility (replaces entirely when set) |
 | `avatars` | `AvatarConfig` | No | Avatar overrides (takes priority over init-returned avatars) |
 | `className` | `string` | No | CSS class for root element |
+| `renderResource` | `(resource: ResourceBlock) => ReactNode \| null` | No | **v0.8** — Custom renderer for structured resource parts; see「结构化资源块」 |
+| `autoSendAfterImageSelect` | `boolean \| string` | No | **v0.8** — After successful `POST /image-select/{projectId}`, auto-start a new SSE stream (see「结构化资源块」) |
 
 ### ChatProvider (React) / provideChatConfig (Vue)
 
@@ -172,7 +174,7 @@ Headless hook that returns all chat panel state and actions for fully custom UI.
 | `isLoadingHistory` | `boolean` | Whether loading history |
 | `showSlashCommands` | `boolean` | Whether showing slash panel |
 | `slashCommands` | `SlashCommand[]` | Merged slash command list |
-| `handleSend` | `(messageOverride?: string, attachments?: ChatAttachment[]) => Promise<void>` | Send message (optional attachments) |
+| `handleSend` | `(messageOverride?: string, attachments?: ChatAttachment[], opts?: { suppressUserBubble?: boolean }) => Promise<void>` | Send message (optional attachments); **v0.8** `suppressUserBubble: true` omits the user bubble but still sends the HTTP request |
 | `handleSlashCommand` | `(cmd: SlashCommand) => void` | Execute slash command |
 | `handleOptionClick` | `(callId: string, name: string, optId: string) => Promise<void>` | Tool option click |
 | `handleResetConversation` | `() => Promise<void>` | Reset conversation |
@@ -402,7 +404,7 @@ Converts backend history API raw messages into `ChatMessage[]`, handling ask_use
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `type` | `'text' \| 'tool' \| 'agent-text' \| 'agent-tools' \| 'image-generation'` | Yes | Part type |
+| `type` | `'text' \| 'tool' \| 'agent-text' \| 'agent-tools' \| 'image-generation' \| 'resource'` | Yes | Part type (**v0.8**: `'resource'` for structured resource blocks) |
 | `content` | `string` | No | Text content |
 | `thinking` | `string` | No | Thinking content |
 | `toolResult` | `ToolInlineResult` | No | Tool inline result |
@@ -415,6 +417,7 @@ Converts backend history API raw messages into `ChatMessage[]`, handling ask_use
 | `agentId` | `string` | No | **v0.5** Sub-agent ID (use with `subAgentMap` for metadata lookup) |
 | `agentAvatarUrl` | `string` | No | **@deprecated v0.5** — use `agentId` + `subAgentMap` instead |
 | `imageGeneration` | `ImageGenerationBlock` | No | 图片生成块（`type === 'image-generation'` 时使用） |
+| `resource` | `ResourceBlock` | No | **v0.8** — Structured resource payload（`type === 'resource'` 时使用） |
 
 ### AgentToolStep
 
@@ -623,6 +626,57 @@ interface ImageGenerationBlock {
 
 ---
 
+## 结构化资源块 (Resource Block)（v0.8）
+
+宿主可通过 SSE `resource` 事件推送任意结构化 JSON，由 `renderResource` 自定义渲染；无自定义渲染时使用 `fallbackText` 降级展示。
+
+### SSE 事件：`resource`
+
+```
+event: resource
+data: {
+  "resourceType": "characters",
+  "data": [{"name": "叶无锋", "role": "protagonist"}, ...],
+  "fallbackText": "已提取 3 个角色：叶无锋、苏婉儿、老管家"
+}
+```
+
+### TypeScript 类型
+
+```typescript
+interface ResourceBlock {
+  resourceType: string;  // 宿主自定义标识，如 "characters", "scenes"
+  data: unknown;         // 任意 JSON，由宿主 renderResource 处理
+  fallbackText?: string; // 无 renderResource 时的降级展示文本
+}
+```
+
+### `MessagePart` 变更
+
+- `MessagePart.type` 新增 `"resource"`。
+- 当 `type === "resource"` 时，part 可携带 `resource?: ResourceBlock`（与 `text` / `image-generation` 等并列的片段字段）。
+
+### `ChatPanel` 相关 props
+
+| Prop | 类型 | 说明 |
+|------|------|------|
+| `renderResource` | `(resource: ResourceBlock) => ReactNode \| null` | 渲染资源块的回调；返回 `null` 或未传时显示 `fallbackText` |
+| `autoSendAfterImageSelect` | `boolean \| string` | `POST /image-select/{projectId}` 成功后是否自动续接流式请求：`true` 时发送 `"__continue__"`；`string` 时发送自定义内容；均不显示用户气泡 |
+
+### `handleSend` 签名（v0.8）
+
+```typescript
+handleSend(
+  messageOverride?: string,
+  attachments?: ChatAttachment[],
+  opts?: { suppressUserBubble?: boolean }
+): Promise<void>;
+```
+
+当 `opts.suppressUserBubble === true` 时，不在消息列表追加用户气泡，但仍照常发起 HTTP 流式请求（用于图片选择后的隐式续写等场景）。
+
+---
+
 ## Server API Endpoints (v0.5)
 
 ### GET `{baseUrl}/init/{projectId}`
@@ -745,6 +799,7 @@ The SSE stream expects the following event types from the server:
 | `delta` | `{ type: "thinking" \| "content", content: string }` | 增量片段（如图片生成前的思考/正文） |
 | `image_generating` | `{ id: string, prompt?: string }` | 图片生成中（展示 loading） |
 | `image_generation` | `{ id, prompt?, images, mode, minSelect?, maxSelect?, actions? }` | 图片生成完成（字段见「图片生成」） |
+| `resource` | `{ resourceType, data, fallbackText? }` | **v0.8** 结构化资源块（见「结构化资源块」） |
 | `tool_start` | `{ id, name, label }` | Tool execution started |
 | `tool_result` | `{ id, name, label, status, message, mode?, options? }` | Tool execution result |
 | `ask_user` | `{ questions: AskUserQuestion[] }` | Structured user question |

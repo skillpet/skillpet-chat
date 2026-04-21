@@ -69,6 +69,7 @@ function detectScenario(msg) {
   if (m.includes("工具") || /\btool\b/.test(m)) return "tool";
   if (m.includes("方案") || /\bplan\b/.test(m)) return "plan";
   if (m.includes("表单") || /\bform\b/.test(m)) return "form";
+  if (m.includes("角色") || m.includes("资源") || /\bcharacters\b/.test(m) || /\bresource\b/.test(m)) return "resource";
   if (m.includes("选择") || /\bchoose\b/i.test(m) || /^\s*ask\s*$/i.test(t)) return "ask";
   return "default";
 }
@@ -81,8 +82,8 @@ async function runDefaultStream(res, msg) {
   for (const p of tp) { await randomDelay(); sseWrite(res, "thinking", { content: p }); }
   sseWrite(res, "thinking_done", {});
   const body = en
-    ? `Here is a **demo** reply from the mock server.\n\n- Bullet one\n- Bullet two\n\nInline \`code\` and a [link](https://example.com).\n\n> The stream uses \`token\` events so Markdown renders progressively.\n\nTry keywords **tool**, **plan**, **choose** (or **ask**), **form** for other scenarios; **image** for single display, **select image** for selection, **multi select image** for multi-select.`
-    : `这是 **Mock SSE** 返回的演示回复。\n\n- 要点一\n- 要点二\n\n行内 \`代码\` 与 [链接示例](https://example.com)。\n\n> 流式 \`token\` 会逐步拼接，便于观察 Markdown 渲染。\n\n试试输入 **工具**、**方案**、**选择**、**表单** 等关键词体验其它场景；输入 **图片** 查看单图展示，**选图片** 单选，**多选图片** 多选；英文可输入 **ask** 或 **form** 触发提问/表单，**image** 触发图片生成。`;
+    ? `Here is a **demo** reply from the mock server.\n\n- Bullet one\n- Bullet two\n\nInline \`code\` and a [link](https://example.com).\n\n> The stream uses \`token\` events so Markdown renders progressively.\n\nTry keywords **tool**, **plan**, **choose** (or **ask**), **form** for other scenarios; type **characters** or **resource** to see the structured \`resource\` SSE demo; **image** for single display, **select image** for selection, **multi select image** for multi-select.`
+    : `这是 **Mock SSE** 返回的演示回复。\n\n- 要点一\n- 要点二\n\n行内 \`代码\` 与 [链接示例](https://example.com)。\n\n> 流式 \`token\` 会逐步拼接，便于观察 Markdown 渲染。\n\n试试输入 **工具**、**方案**、**选择**、**表单** 等关键词体验其它场景；输入 **角色** 或 **characters** 查看结构化 \`resource\` 演示（也可输入 **resource** / **资源**）；输入 **图片** 查看单图展示，**选图片** 单选，**多选图片** 多选；英文可输入 **ask** 或 **form** 触发提问/表单，**image** 触发图片生成。`;
   await streamTextAsTokens(res, body, en ? "word" : "char");
   sseWrite(res, "done", {});
 }
@@ -114,6 +115,23 @@ async function runFormScenario(res, msg) {
     ? [{ id: "q-genre", prompt: "What genre do you prefer?", allowMultiple: true, options: [{ id: "fantasy", label: "Fantasy" },{ id: "scifi", label: "Sci-Fi" },{ id: "mystery", label: "Mystery" },{ id: "romance", label: "Romance" },{ id: "adventure", label: "Adventure" }] },{ id: "q-audience", prompt: "Target audience?", options: [{ id: "children", label: "Children (6-12)" },{ id: "teen", label: "Young Adult" },{ id: "adult", label: "Adult" }] },{ id: "q-extra", prompt: "Any special requirements?", allowFreeText: true, allowMultiple: true, freeTextPlaceholder: "e.g. keep it under 500 words, include a plot twist…", options: [{ id: "humor", label: "Add humor" },{ id: "suspense", label: "Build suspense" }] }]
     : [{ id: "q-genre", prompt: "你偏好什么题材？", allowMultiple: true, options: [{ id: "fantasy", label: "奇幻" },{ id: "scifi", label: "科幻" },{ id: "mystery", label: "悬疑" },{ id: "romance", label: "言情" },{ id: "adventure", label: "冒险" }] },{ id: "q-audience", prompt: "目标读者群体？", options: [{ id: "children", label: "儿童 (6-12岁)" },{ id: "teen", label: "青少年" },{ id: "adult", label: "成人" }] },{ id: "q-extra", prompt: "其他特殊要求？", allowFreeText: true, allowMultiple: true, freeTextPlaceholder: "例如：控制在 500 字以内、加入反转情节…", options: [{ id: "humor", label: "加入幽默元素" },{ id: "suspense", label: "营造悬念感" }] }];
   sseWrite(res, "ask_user", { questions });
+}
+
+async function runResourceScenario(res) {
+  await randomDelay();
+  sseWrite(res, "token", { content: "已从故事中提取了 3 个角色：" });
+  sseWrite(res, "resource", {
+    resourceType: "characters",
+    data: [
+      { name: "叶无锋", role: "protagonist", gender: "male" },
+      { name: "苏婉儿", role: "lead", gender: "female" },
+      { name: "老管家", role: "supporting", gender: "male" },
+    ],
+    fallbackText: "已提取 3 个角色：叶无锋、苏婉儿、老管家",
+  });
+  await randomDelay();
+  sseWrite(res, "token", { content: "\n\n每个角色的性格和背景已整理完毕，可以继续分析场景。" });
+  sseWrite(res, "done", {});
 }
 
 async function runPlanScenario(res, msg) {
@@ -205,6 +223,7 @@ async function handleStreamPost(req, res) {
     else if (s === "ask") await runAskScenario(res, message);
     else if (s === "form") await runFormScenario(res, message);
     else if (s === "plan") await runPlanScenario(res, message);
+    else if (s === "resource") await runResourceScenario(res);
     else await runDefaultStream(res, message);
   } catch (e) { sseWrite(res, "error", { message: e?.message || "MOCK_ERROR" }); sseWrite(res, "done", {}); }
   res.end();
@@ -293,6 +312,7 @@ const server = createServer((req, res) => {
       ],
       userAvatarUrl: "https://api.dicebear.com/9.x/thumbs/svg?seed=user",
       messages: [],
+      hint: "输入 **角色** 或 **characters** 查看 resource 结构化数据演示（也可输入 **resource** / **资源**）。",
     });
     return;
   }

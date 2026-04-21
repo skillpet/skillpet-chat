@@ -4,6 +4,7 @@ import {
   ChatPanel,
   type ChatPanelConfig,
   type ChatPanelEmptyState,
+  type ResourceBlock,
 } from "@skillpet/chat-react";
 import { useLang } from "../App";
 
@@ -207,6 +208,18 @@ export default function ChatDemoPage() {
           emptyState={emptyState}
           capVisibleOverride={capOverride}
           className="min-h-0 flex-1"
+          renderResource={(resource: ResourceBlock) => (
+            <div className="rounded-lg border border-dashed border-border bg-muted/30 p-3 mt-1.5">
+              <div className="flex items-center gap-1.5 mb-2">
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  {resource.resourceType}
+                </span>
+              </div>
+              <pre className="text-xs text-foreground/70 overflow-auto max-h-48 whitespace-pre-wrap">
+                {JSON.stringify(resource.data, null, 2)}
+              </pre>
+            </div>
+          )}
         />
       </div>
     </main>

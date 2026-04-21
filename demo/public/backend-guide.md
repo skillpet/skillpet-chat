@@ -2,7 +2,7 @@
 
 > 本文档面向接入 `@skillpet/chat-react`（或 `@skillpet/chat-vue`）组件的后端开发者，详细说明组件期望的 HTTP 接口规范、SSE 事件协议、消息存储格式以及智能体系统提示词建议。
 >
-> 组件版本：`@skillpet/chat-core@0.7.0` / `@skillpet/chat-react@0.7.0`
+> 组件版本：`@skillpet/chat-core@0.8.0` / `@skillpet/chat-react@0.8.0`（v0.8 起支持 `resource` 事件与历史 `parts` 中的 resource 片段；v0.7 图片生成等能力仍适用）
 
 ## Related Docs
 
@@ -662,7 +662,54 @@ Authorization: Bearer <token>
 
 ---
 
-### 3.8 事件发送顺序参考
+### 3.8 结构化资源事件 `resource`（v0.8）
+
+后端可在 AI 正文流的任意位置推送 `resource` 事件；前后均可夹杂 `token` / `delta` 等事件。前端将其作为**当前 assistant 消息**中的一个 `resource` **part** 插入，**不产生**新的 `tool` 消息。
+
+**SSE 示例：**
+
+```
+event: resource
+data: {"resourceType":"characters","data":[{"name":"叶无锋","role":"protagonist"}],"fallbackText":"已提取 3 个角色：叶无锋、苏婉儿、老管家"}
+```
+
+#### 历史存储格式（方案 A）
+
+存储 assistant 消息时，若同一条消息需保留文本与 resource 的先后顺序，在 `_pub_asst` JSON 中补充 `parts` 数组（与仅 `text` 字段并存时，以 `parts` 为准还原多段内容）：
+
+```json
+{
+  "_t": "_pub_asst",
+  "text": "最后一段文字",
+  "parts": [
+    { "type": "text", "content": "已从故事中提取了 3 个角色：" },
+    {
+      "type": "resource",
+      "resource": {
+        "resourceType": "characters",
+        "data": [{"name": "叶无锋", "role": "protagonist"}, ...],
+        "fallbackText": "已提取 3 个角色：叶无锋、苏婉儿、老管家"
+      }
+    },
+    { "type": "text", "content": "每个角色的性格和背景已整理完毕。" }
+  ]
+}
+```
+
+前端 `parseHistoryMessages` 会识别 `parts` 并还原为带 `resource` 片段的 assistant 消息。
+
+#### 前端展示与降级
+
+- 若宿主未传入 `renderResource`（或回调返回 `null`），UI 显示 `fallbackText`。
+- 若 `fallbackText` 也为空，前端**静默跳过**该 resource 片段（不占位报错）。
+
+#### `autoSendAfterImageSelect` 与续写流
+
+当宿主为 `ChatPanel` 配置 `autoSendAfterImageSelect` 时：`POST {baseUrl}/image-select/{projectId}` 成功返回后，前端会**自动再发起一轮** `POST /stream` 的 SSE 请求，且**不展示用户气泡**（`suppressUserBubble`）。`true` 时消息体为 `"__continue__"`，为 `string` 时为自定义续写提示。后端应据此继续下一轮生成（例如结合已选图片 ID 与会话上下文）。
+
+---
+
+### 3.9 事件发送顺序参考
 
 一次典型的对话 SSE 流：
 
@@ -1139,5 +1186,6 @@ export default router;
 | `resource_updated` | `key: string, snapshot?: object` | 资源变更 |
 | `image_generating` | `id, prompt?` | 图片生成中（v0.7） |
 | `image_generation` | `id, prompt?, images, mode, minSelect?, maxSelect?, actions?` | 图片生成完成（v0.7） |
+| `resource` | `resourceType, data, fallbackText?` | 结构化资源块（v0.8），插入 assistant `parts` |
 | `done` | `{ conversationId: string }` | 对话完成 |
 | `error` | `{ message: string }` | 错误 |
