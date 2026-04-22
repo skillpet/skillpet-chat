@@ -78,6 +78,7 @@ const CAP_LABELS: Record<string, Record<string, string>> = {
 export default function ChatDemoPage() {
   const lang = useLang();
   const [capOverride, setCapOverride] = useState<string[]>([...ALL_CAPS]);
+  const [readOnly, setReadOnly] = useState(false);
   const [activeTheme, setActiveTheme] = useState(() => {
     try { return localStorage.getItem(STORAGE_THEME_COLOR) ?? ""; } catch { return ""; }
   });
@@ -177,6 +178,20 @@ export default function ChatDemoPage() {
 
         <span className="hidden sm:block h-4 w-px bg-border mx-1" />
 
+        <button
+          type="button"
+          onClick={() => setReadOnly((v) => !v)}
+          className={`rounded-full border px-2.5 py-0.5 text-xs font-medium transition-all ${
+            readOnly
+              ? "border-amber-400/60 bg-amber-400/15 text-amber-600 dark:text-amber-400"
+              : "border-border bg-transparent text-muted-foreground opacity-60"
+          }`}
+        >
+          {lang.startsWith("zh") ? (readOnly ? "只读 ON" : "只读 OFF") : (readOnly ? "ReadOnly ON" : "ReadOnly OFF")}
+        </button>
+
+        <span className="hidden sm:block h-4 w-px bg-border mx-1" />
+
         <span className="text-xs text-muted-foreground mr-1 flex items-center gap-1">
           <Palette className="h-3 w-3" />
           {lang.startsWith("zh") ? "主题色：" : "Theme:"}
@@ -207,6 +222,7 @@ export default function ChatDemoPage() {
           quickStarters={quickStarters}
           emptyState={emptyState}
           capVisibleOverride={capOverride}
+          readOnly={readOnly}
           className="min-h-0 flex-1"
           renderResource={(resource: ResourceBlock) => (
             <div className="rounded-lg border border-dashed border-border bg-muted/30 p-3 mt-1.5">

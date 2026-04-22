@@ -106,6 +106,7 @@ Main component with full chat UI, input box, message list, and tool interaction.
 | `className` | `string` | No | CSS class for root element |
 | `renderResource` | `(resource: ResourceBlock) => ReactNode \| null` | No | **v0.8** — Custom renderer for structured resource parts; see「结构化资源块」 |
 | `autoSendAfterImageSelect` | `boolean \| string` | No | **v0.8** — After successful `POST /image-select/{projectId}`, auto-start a new SSE stream (see「结构化资源块」) |
+| `readOnly` | `boolean` | No | **v0.9** — 只读模式，隐藏底部输入区和 quickStarter 按钮，仅展示消息流 |
 
 ### ChatProvider (React) / provideChatConfig (Vue)
 

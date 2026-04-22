@@ -1189,3 +1189,13 @@ export default router;
 | `resource` | `resourceType, data, fallbackText?` | 结构化资源块（v0.8），插入 assistant `parts` |
 | `done` | `{ conversationId: string }` | 对话完成 |
 | `error` | `{ message: string }` | 错误 |
+
+---
+
+### readOnly 模式（v0.9+）
+
+设置 `readOnly` prop 后，`<ChatPanel>` 只渲染消息流，不渲染输入框、quickStarter 按钮和排队区。
+宿主通过 `handleSend(payload, undefined, { suppressUserBubble: true })` 程序化启动流程。
+
+适用场景：工作流运行态进度展示、历史回放、只读访客视图。
+后端接口无需变更，`readOnly` 为纯前端展示控制。
