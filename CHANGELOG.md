@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.10.0 — 2026-04-09
+
+### Added
+
+- `ChatPanelHandle` interface（新增至 `@skillpet/chat-core`）：通过 `forwardRef`（React）和
+  `defineExpose`（Vue）向宿主暴露命令式 API，包含 `handleSend`、`setMessages`、
+  `stopGeneration`、`scrollToBottom`、`getMessages`。
+- 结合 `readOnly` prop 使用，宿主可在不显示输入框的情况下程序化派发消息 / 同步进度。
+
+### Changed
+
+- 无 breaking change；`ChatPanel` 默认行为与 v0.9.0 完全一致。
+  `ref` 为可选参数，不传时功能无变化。
+
+---
+
 ## v0.9.0 — 2026-04-09
 
 ### Added

@@ -108,6 +108,8 @@ Main component with full chat UI, input box, message list, and tool interaction.
 | `autoSendAfterImageSelect` | `boolean \| string` | No | **v0.8** — After successful `POST /image-select/{projectId}`, auto-start a new SSE stream (see「结构化资源块」) |
 | `readOnly` | `boolean` | No | **v0.9** — 只读模式，隐藏底部输入区和 quickStarter 按钮，仅展示消息流 |
 
+> **`ref` / `ChatPanelHandle`**（v0.10+）：通过 React `forwardRef` 或 Vue template ref 获取命令式 API，详见 [ChatPanelHandle（v0.10.0+）](#chatpanelhandle-v0100) 章节。
+
 ### ChatProvider (React) / provideChatConfig (Vue)
 
 Injects `ChatPanelConfig` via Context / provide-inject so multiple ChatPanel instances share one config.
@@ -823,3 +825,34 @@ The SSE stream expects the following event types from the server:
 - Blue brand color default theme, dark/light mode
 - CSS variables for full color customization
 - UMD builds for CDN usage
+
+---
+
+## ChatPanelHandle（v0.10.0+）
+
+`@skillpet/chat-react` 和 `@skillpet/chat-vue` 均通过 `forwardRef` / `defineExpose` 向宿主暴露以下命令式 API：
+
+| 方法 | 签名 | 说明 |
+|---|---|---|
+| `handleSend` | `(msg?, attachments?, opts?) => Promise<void>` | 发送消息；`suppressUserBubble: true` 隐藏用户气泡 |
+| `setMessages` | `(updater: (prev) => next) => void` | 直接更新消息列表 |
+| `stopGeneration` | `() => void` | 中断当前 SSE 流 |
+| `scrollToBottom` | `(animated?) => void` | 滚动到底部 |
+| `getMessages` | `() => ChatMessage[]` | 获取消息列表快照 |
+
+**React 用法：**
+
+```tsx
+const chatRef = useRef<ChatPanelHandle>(null);
+return <ChatPanel ref={chatRef} readOnly ... />;
+// chatRef.current?.handleSend(payload, undefined, { suppressUserBubble: true });
+```
+
+**Vue 用法：**
+
+```vue
+<ChatPanel ref="chatRef" :read-only="true" ... />
+<!-- chatRef.value?.handleSend(payload, undefined, { suppressUserBubble: true }) -->
+```
+
+典型场景：工作流运行态（`readOnly`）+ mount 后程序化启动 SSE 流程。

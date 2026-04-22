@@ -1199,3 +1199,21 @@ export default router;
 
 适用场景：工作流运行态进度展示、历史回放、只读访客视图。
 后端接口无需变更，`readOnly` 为纯前端展示控制。
+
+### ChatPanelHandle 命令式 API（v0.10+）
+
+配合 `readOnly` 模式，宿主通过 `chatRef` 拿到命令式 API：
+
+```tsx
+// React
+const chatRef = useRef<ChatPanelHandle>(null);
+<ChatPanel ref={chatRef} readOnly config={...} />
+
+// mount 后派发
+chatRef.current?.handleSend(payload, undefined, { suppressUserBubble: true });
+
+// 外部进度同步
+chatRef.current?.setMessages(prev => syncJobs(prev, jobs));
+```
+
+后端无需任何配合，`handleSend` 仍走标准 `POST /api/{projectId}/chat` + SSE 流程。

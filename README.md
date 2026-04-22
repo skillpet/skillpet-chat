@@ -81,6 +81,7 @@ function App() {
 - **附件增强** — 拖放文件上传、粘贴图片上传、图片缩略图预览（v0.6）
 - 图片生成展示与选择（display / 单选 / 多选模式）
 - `readOnly` 只读模式：隐藏输入区，仅展示消息流（v0.9）
+- `ChatPanelHandle`：`forwardRef` 暴露命令式 API，程序化派发消息 / 同步进度（v0.10）
 - 斜杠指令面板
 - 内置 7 种语言（zh-CN、zh-TW、en、ja、ko、es、fr）
 - 蓝色品牌色默认主题，支持深色/浅色模式
