@@ -389,9 +389,9 @@ async function handleStreamPost(req: IncomingMessage, res: ServerResponse): Prom
 
     const images = Array.from({ length: imageCount }, (_, i) => ({
       id: `img-${i}`,
-      url: `https://picsum.photos/seed/${blockId}-${i}/512/512`,
-      width: 512,
-      height: 512,
+      url: `https://picsum.photos/seed/${blockId}-${i}/1024/1024`,
+      width: 1024,
+      height: 1024,
     }));
 
     const genData: Record<string, unknown> = {
