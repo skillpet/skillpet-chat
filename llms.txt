@@ -1,0 +1,16 @@
+# @skillpet/chat
+
+> SSE streaming AI chat panel component library for React & Vue 3.
+
+## Docs
+
+- [API Reference](https://chat.skill.pet/api.md): Frontend component API — types, props, hooks, queued send, attachment handling, and usage examples.
+- [Backend Integration Guide](https://chat.skill.pet/backend-guide.md): HTTP API spec, SSE event protocol, message storage schema, System Prompt best practices.
+
+## Links
+
+- npm: https://www.npmjs.com/package/@skillpet/chat-react
+- npm: https://www.npmjs.com/package/@skillpet/chat-vue
+- npm: https://www.npmjs.com/package/@skillpet/chat-core
+- Demo: https://chat.skill.pet
+- GitHub: https://github.com/skillpet/skillpet-chat

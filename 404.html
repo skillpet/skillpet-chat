@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@skillpet/chat · SSE AI Chat Panel</title>
+    <meta name="description" content="SSE streaming AI chat panel component library — React & Vue 3, i18n 7 languages, fully customizable." />
+    <link rel="alternate" type="text/markdown" href="/api.md" title="API Reference (Markdown)" />
+    <link rel="author" href="https://github.com/skillpet/skillpet-chat" />
+    <meta name="robots" content="index, follow" />
+    <!-- llms.txt: /llms.txt  |  Full API docs: /api.md -->
+    <script>
+      (function () {
+        try {
+          if (localStorage.getItem("skillpet-chat-test-theme") === "dark") {
+            document.documentElement.classList.add("dark");
+          }
+          var lang = localStorage.getItem("skillpet-chat-test-lang");
+          if (lang) document.documentElement.lang = lang;
+        } catch (e) {}
+      })();
+    </script>
+    <script type="module" crossorigin src="/assets/index-D7vTQES4.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-DKE-p2CL.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
