@@ -31,7 +31,7 @@ const I18N: Record<string, WelcomeStrings> = {
   "zh-CN": {
     tagline: "SSE 流式 AI 对话面板组件库 — 支持 React & Vue 3，",
     desc: "开箱即用、可深度定制。",
-    badge: "v0.3 · Mock SSE Demo",
+    badge: "v0.11 · Mock SSE Demo",
     enterDemo: "进入演示",
     apiDoc: "API 文档",
     tipTool: ["工具", "tool"],
@@ -47,7 +47,7 @@ const I18N: Record<string, WelcomeStrings> = {
   "zh-TW": {
     tagline: "SSE 串流 AI 對話面板元件庫 — 支援 React & Vue 3，",
     desc: "開箱即用、可深度自訂。",
-    badge: "v0.3 · Mock SSE Demo",
+    badge: "v0.11 · Mock SSE Demo",
     enterDemo: "進入演示",
     apiDoc: "API 文件",
     tipTool: ["工具", "tool"],
@@ -63,7 +63,7 @@ const I18N: Record<string, WelcomeStrings> = {
   en: {
     tagline: "SSE streaming AI chat panel component library — React & Vue 3,",
     desc: "ready to use, fully customizable.",
-    badge: "v0.3 · Mock SSE Demo",
+    badge: "v0.11 · Mock SSE Demo",
     enterDemo: "Enter Demo",
     apiDoc: "API Docs",
     tipTool: ["tool", "工具"],
@@ -79,7 +79,7 @@ const I18N: Record<string, WelcomeStrings> = {
   ja: {
     tagline: "SSE ストリーミング AI チャットパネルコンポーネント — React & Vue 3 対応、",
     desc: "すぐ使える、高度にカスタマイズ可能。",
-    badge: "v0.3 · Mock SSE Demo",
+    badge: "v0.11 · Mock SSE Demo",
     enterDemo: "デモへ",
     apiDoc: "API ドキュメント",
     tipTool: ["ツール", "tool"],
@@ -95,7 +95,7 @@ const I18N: Record<string, WelcomeStrings> = {
   ko: {
     tagline: "SSE 스트리밍 AI 채팅 패널 컴포넌트 — React & Vue 3 지원,",
     desc: "바로 사용 가능, 완전 커스터마이징.",
-    badge: "v0.3 · Mock SSE Demo",
+    badge: "v0.11 · Mock SSE Demo",
     enterDemo: "데모 시작",
     apiDoc: "API 문서",
     tipTool: ["도구", "tool"],
@@ -111,7 +111,7 @@ const I18N: Record<string, WelcomeStrings> = {
   es: {
     tagline: "Biblioteca de componentes de chat AI con SSE — React & Vue 3,",
     desc: "lista para usar, totalmente personalizable.",
-    badge: "v0.3 · Mock SSE Demo",
+    badge: "v0.11 · Mock SSE Demo",
     enterDemo: "Entrar al Demo",
     apiDoc: "Documentación API",
     tipTool: ["herramienta", "tool"],
@@ -127,7 +127,7 @@ const I18N: Record<string, WelcomeStrings> = {
   fr: {
     tagline: "Bibliothèque de composants de chat IA SSE — React & Vue 3,",
     desc: "prête à l'emploi, entièrement personnalisable.",
-    badge: "v0.3 · Mock SSE Demo",
+    badge: "v0.11 · Mock SSE Demo",
     enterDemo: "Entrer dans la Démo",
     apiDoc: "Documentation API",
     tipTool: ["outil", "tool"],
