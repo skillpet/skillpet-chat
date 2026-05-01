@@ -39,7 +39,7 @@ export function ImageGenerationBlock({
 
   if (block.status === "generating") {
     return (
-      <div className="rounded-xl border border-border bg-muted/30 p-4">
+      <div className="min-w-0 rounded-xl border border-border bg-muted/30 p-4">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <ImageIcon className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
           <Loader2 className="h-4 w-4 animate-spin" />
@@ -54,13 +54,13 @@ export function ImageGenerationBlock({
           </div>
         ) : null}
         <div
-          className="mt-3 grid w-full gap-2"
+          className="mt-3 grid w-full min-w-0 gap-2"
           style={imageGridStyle}
           role="group"
           aria-label={t("chat.imageChoiceGrid")}
         >
           {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="aspect-square rounded-lg bg-muted animate-pulse" aria-hidden />
+            <div key={i} className="aspect-square min-w-0 rounded-lg bg-muted animate-pulse" aria-hidden />
           ))}
         </div>
       </div>
@@ -76,7 +76,7 @@ export function ImageGenerationBlock({
         : undefined;
 
   return (
-    <div className="rounded-xl border border-border bg-muted/30 p-2.5">
+    <div className="min-w-0 rounded-xl border border-border bg-muted/30 p-2.5">
       {block.prompt ? (
         <div className="mb-2 space-y-0.5 px-1">
           <p className="text-[11px] font-medium text-muted-foreground">{t("chat.imageGenPrompt")}</p>
@@ -116,7 +116,7 @@ export function ImageGenerationBlock({
               }}
               onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.currentTarget.click(); } }}
               className={cn(
-                "relative cursor-pointer rounded-lg",
+                "relative min-w-0 max-w-[200px] justify-self-start cursor-pointer rounded-lg",
                 isSelected ? "ring-2 ring-primary ring-offset-2" : "",
                 block.mode !== "display" && isCompleted && !isSelected ? "opacity-70" : "",
               )}
@@ -141,6 +141,8 @@ export function ImageGenerationBlock({
                 alt={img.label || ""}
                 style={{
                   width: "100%",
+                  maxWidth: "100%",
+                  minWidth: 0,
                   aspectRatio: "1/1",
                   objectFit: "cover",
                   borderRadius: "var(--skillpet-chat-radius)",

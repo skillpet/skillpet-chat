@@ -74,7 +74,7 @@ function onSubmitClick() {
 </script>
 
 <template>
-  <div v-if="block.status === 'generating'" class="rounded-xl border border-border bg-muted/30 p-4">
+  <div v-if="block.status === 'generating'" class="min-w-0 rounded-xl border border-border bg-muted/30 p-4">
     <div class="flex items-center gap-2 text-sm text-muted-foreground">
       <ImageIcon class="h-4 w-4 shrink-0 opacity-70" aria-hidden="true" />
       <Loader2 class="h-4 w-4 animate-spin" />
@@ -119,7 +119,7 @@ function onSubmitClick() {
         tabindex="0"
         :class="
           cn(
-            'relative cursor-pointer rounded-lg',
+            'relative min-w-0 max-w-[200px] justify-self-start cursor-pointer rounded-lg',
             selectedIds.has(img.id)
               ? 'ring-2 ring-primary ring-offset-2'
               : '',
@@ -148,6 +148,8 @@ function onSubmitClick() {
           :alt="img.label || ''"
           :style="{
             width: '100%',
+            maxWidth: '100%',
+            minWidth: 0,
             aspectRatio: '1/1',
             objectFit: 'cover',
             borderRadius: 'var(--skillpet-chat-radius)',
