@@ -370,7 +370,7 @@ Converts backend history API raw messages into `ChatMessage[]`, handling ask_use
 |-------|------|----------|-------------|
 | `id` | `string` | Yes | Question ID |
 | `prompt` | `string` | Yes | Question text |
-| `options` | `{ id: string, label: string }[]` | Yes | Option list |
+| `options` | `Array<{ id: string; label: string; description?: string }>` | Yes | Option list；当任一选项包含 `description` 时，UI 自动切换为卡片布局（label 加粗 + description 小字灰色） |
 | `allowMultiple` | `boolean` | No | Allow multi-select |
 | `allowFreeText` | `boolean` | No | Allow free text input |
 | `freeTextPlaceholder` | `string` | No | Free text placeholder |
@@ -819,7 +819,7 @@ The SSE stream expects the following event types from the server:
 - SSE streaming with real-time AI thinking process and tool calls
 - React & Vue 3 fully equivalent components
 - Sub-agent (consult agent) multi-turn conversations
-- Structured questions (ask_user) with form interaction
+- Structured questions (ask_user) with form interaction；选项支持 `description`（v0.11+，卡片式布局）
 - Slash command palette
 - Built-in 7 languages: zh-CN, zh-TW, en, ja, ko, es, fr
 - Blue brand color default theme, dark/light mode

@@ -1,5 +1,22 @@
 # Changelog
 
+## v0.11.0 — 2026-05-01
+
+### Added
+
+- `AskUserQuestion.options[].description`（可选 string）：选项描述字段。当任一选项含 description 时，
+  UI 自动切换为纵向卡片布局（label 加粗 + description 小字灰色 line-clamp-3）。
+  无 description 的选项保持原有按钮流布局。
+
+### Fixed
+
+- **图片不清晰**：
+  - 已选择确认后的未选中图片从 `opacity-40` 改为 `opacity-60 saturate-[0.3]`（灰淡但清晰）
+  - 预览 modal 最大尺寸从 400×400px 改为 90vw×85vh（大图全屏可看清）
+  - 网格图片直接使用 `img.url` 高清原图（不再优先加载 thumbnailUrl）
+
+---
+
 ## v0.10.0 — 2026-04-09
 
 ### Added
