@@ -119,7 +119,7 @@ function onSubmitClick() {
         tabindex="0"
         :class="
           cn(
-            'relative min-w-0 max-w-[200px] justify-self-start cursor-pointer rounded-lg',
+            'relative min-w-0 cursor-pointer rounded-lg',
             selectedIds.has(img.id)
               ? 'ring-2 ring-primary ring-offset-2'
               : '',

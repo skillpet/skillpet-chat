@@ -2,7 +2,7 @@
 
 > 本文档面向接入 `@skillpet/chat-react`（或 `@skillpet/chat-vue`）组件的后端开发者，详细说明组件期望的 HTTP 接口规范、SSE 事件协议、消息存储格式以及智能体系统提示词建议。
 >
-> 组件版本：`@skillpet/chat-core@0.8.0` / `@skillpet/chat-react@0.8.0`（v0.8 起支持 `resource` 事件与历史 `parts` 中的 resource 片段；v0.7 图片生成等能力仍适用）
+> 组件版本：`@skillpet/chat-core@0.11.4` / `@skillpet/chat-react@0.11.4`（v0.11.4 修复图片网格布局；v0.8 起支持 `resource` 事件与历史 `parts` 中的 resource 片段；v0.7 图片生成等能力仍适用）
 
 ## Related Docs
 

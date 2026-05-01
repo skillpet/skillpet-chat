@@ -1,5 +1,17 @@
 # Changelog
 
+## v0.11.4 — 2026-05-02
+
+### Fixed
+
+- **图片网格单列显示**：修复图片（display）、单选图片（single_select）、多选图片（multi_select）三种模式下
+  图片网格每张图单独一行的问题。根因是 MessageBubble 中助手消息和工具消息的 flex 容器缺少确定宽度，
+  导致 CSS Grid 的 `auto-fill` 无法计算列数。现已为容器添加 `flex-1`，使 `repeat(auto-fill, minmax(96px, 200px))`
+  正确自适应多列排布。
+- ImageGenerationBlock 外层容器添加 `w-full` 确保宽度填满父容器。
+
+---
+
 ## v0.11.0 — 2026-05-01
 
 ### Added

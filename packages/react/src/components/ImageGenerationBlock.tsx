@@ -9,7 +9,7 @@ function selectedIdsFromBlock(block: ImageGenBlock): Set<string> {
   return new Set((block.selectedImageIds ?? []).filter((id: string) => valid.has(id)));
 }
 
-/** 缩略图网格：每项 96–200px 宽，列数随容器自动换行（勿用 min(100%,…) 作 minmax 下限，否则易变成单列） */
+/** 缩略图网格：每项 96–200px 宽，列数随容器自动换行 */
 const imageGridStyle: CSSProperties = {
   gridTemplateColumns: "repeat(auto-fill, minmax(96px, 200px))",
 };
@@ -39,7 +39,7 @@ export function ImageGenerationBlock({
 
   if (block.status === "generating") {
     return (
-      <div className="min-w-0 rounded-xl border border-border bg-muted/30 p-4">
+      <div className="w-full min-w-0 rounded-xl border border-border bg-muted/30 p-4">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <ImageIcon className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
           <Loader2 className="h-4 w-4 animate-spin" />
@@ -76,7 +76,7 @@ export function ImageGenerationBlock({
         : undefined;
 
   return (
-    <div className="min-w-0 rounded-xl border border-border bg-muted/30 p-2.5">
+    <div className="w-full min-w-0 rounded-xl border border-border bg-muted/30 p-2.5">
       {block.prompt ? (
         <div className="mb-2 space-y-0.5 px-1">
           <p className="text-[11px] font-medium text-muted-foreground">{t("chat.imageGenPrompt")}</p>
@@ -87,7 +87,7 @@ export function ImageGenerationBlock({
       ) : null}
 
       <div
-        className="grid w-full gap-2"
+        className="grid w-full min-w-0 gap-2"
         style={imageGridStyle}
         role="group"
         aria-label={t("chat.imageChoiceGrid")}
@@ -116,7 +116,7 @@ export function ImageGenerationBlock({
               }}
               onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.currentTarget.click(); } }}
               className={cn(
-                "relative min-w-0 max-w-[200px] justify-self-start cursor-pointer rounded-lg",
+                "relative min-w-0 cursor-pointer rounded-lg",
                 isSelected ? "ring-2 ring-primary ring-offset-2" : "",
                 block.mode !== "display" && isCompleted && !isSelected ? "opacity-70" : "",
               )}
