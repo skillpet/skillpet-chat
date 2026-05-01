@@ -11,6 +11,8 @@ const __dirname = fileURLToPath(new URL(".", import.meta.url));
 const DIST = join(__dirname, "dist");
 const DIST_ROOT = resolve(DIST);
 const MAX_UPLOAD_SIZE = 10 * 1024 * 1024; // 10MB
+/** Demo：Picsum 固定 ID（可稳定访问）；避免 Unsplash 直链在部分网络下不可用 */
+const DEMO_IMAGE_PICSUM_IDS = [29, 64, 237, 433, 866, 1025];
 const PORT = parseInt(process.env.PORT || "3300", 10);
 
 const MIME = {
@@ -184,12 +186,15 @@ async function handleStreamPost(req, res) {
 
     await delay(2000);
 
-    const images = Array.from({ length: imageCount }, (_, i) => ({
-      id: `img-${i}`,
-      url: `https://picsum.photos/seed/${blockId}-${i}/1024/1024`,
-      width: 1024,
-      height: 1024,
-    }));
+    const images = Array.from({ length: imageCount }, (_, i) => {
+      const picsumId = DEMO_IMAGE_PICSUM_IDS[i % DEMO_IMAGE_PICSUM_IDS.length];
+      return {
+        id: `img-${i}`,
+        url: `https://picsum.photos/id/${picsumId}/800/800`,
+        width: 800,
+        height: 800,
+      };
+    });
 
     const genData = {
       id: blockId,
